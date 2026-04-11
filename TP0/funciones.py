@@ -1,27 +1,27 @@
 from tkinter import filedialog, messagebox
 from PIL import Image, ImageTk
 
-imagen_original = None
-imagen_modificada = None
 imagen_tk_original = None
 imagen_tk_modificada = None
 
 
 def cargar_imagen(panel_or, panel_mod):
 
-    global imagen_original, imagen_tk_original, imagen_modificada, imagen_tk_modificada
+    global imagen_original, imagen_tk_original
+    
 
     ruta = filedialog.askopenfilename(
         title='Seleccionar imagen',
-        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *bmp')]
+        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png')]
         )
     
     if ruta:
         imagen_original = Image.open(ruta)
         imagen_modificada = imagen_original.copy()
 
-        if imagen_original.height > 1920 or imagen_original.width > 1080:
-            imagen_original = imagen_original.resize((1280, 720))
+        if imagen_original.height > 960 or imagen_original.width > 540:
+            imagen_original = imagen_original.resize((960, 540))
+            imagen_modificada = imagen_modificada.resize((960, 540))
             
         imagen_tk_original = ImageTk.PhotoImage(imagen_original)
         imagen_tk_modificada = ImageTk.PhotoImage(imagen_modificada)
@@ -53,29 +53,24 @@ def guardar_imagen(imagen_modificada):
         messagebox.showinfo('Exito', 'Imagen guardada')
 
 
-def cambiar_modo_seleccion(panel_or, panel_mod, boton_activar, var_modo):
+def cambiar_modo_seleccion(panel_or, panel_mod, boton_activar, var_modo, imagen):
 
+    if imagen is None:
+        messagebox.showwarning('Aviso', 'Primero debes cargar una imagen para activar el modo seleccion.')
+        return
+    
     modo_seleccion = not var_modo.get()
     var_modo.set(modo_seleccion)
 
     if modo_seleccion:
-        boton_activar.configure(text='Seleccion: ACTIVADO', bg='green', fg='white')
+        boton_activar.configure(text='Seleccion: ACTIVADO', bg='green', fg='white', activebackground='darkgreen')
         panel_or.configure(cursor='cross')
         panel_mod.configure(cursor='cross')
     else:
-        boton_activar.configure(text='Activar Seleccion', bg='SystemButtonFace')
+        boton_activar.configure(text='Activar Seleccion', bg='#d9d9d9', fg='black', activebackground='#ececec')
         panel_or.configure(cursor = 'arrow')
         panel_mod.configure(cursor = 'arrow')
 
-
-def obtener_valor_pixel(event, lbl_color, modo_seleccion, imagen):
-
-    if modo_seleccion.get() and imagen:
-   
-        x, y = event.x, event.y
-        valor = imagen.getpixel((x, y))
-
-        lbl_color.configure(text=f'Coordenadas: {x}, {y} Valor: {valor}')
 
 
     
