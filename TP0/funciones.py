@@ -1,4 +1,4 @@
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
 
 imagen_tk_original = None
@@ -70,6 +70,64 @@ def cambiar_modo_seleccion(panel_or, panel_mod, boton_activar, var_modo, imagen)
         boton_activar.configure(text='Activar Seleccion', bg='#d9d9d9', fg='black', activebackground='#ececec')
         panel_or.configure(cursor = 'arrow')
         panel_mod.configure(cursor = 'arrow')
+
+
+def cambiar_color_pixel(event, imagen, panel_mod, lbl_info):
+
+    if imagen is None:
+        messagebox.showwarning('Aviso', 'Primero debes cargar una imagen para usar esta funcion.')
+        return
+
+    x, y = event.x, event.y
+    
+    rojo = simpledialog.askinteger('Input', 'Valor Rojo (0-255):', minvalue=0, maxvalue=255)
+    if rojo is None: return
+
+    verde = simpledialog.askinteger('Input', 'Valor Verde (0-255):', minvalue=0, maxvalue=255)
+    if verde is None: return
+
+    azul = simpledialog.askinteger('Input', 'Valor Azul (0-255)', minvalue=0, maxvalue=255)
+    if azul is None: return
+
+    nuevo_color = (rojo, verde, azul)
+
+    imagen.putpixel((x, y), nuevo_color)
+
+    nueva_imagen_tk = ImageTk.PhotoImage(imagen)
+    panel_mod.create_image(0, 0, anchor='nw', image=nueva_imagen_tk)
+    panel_mod.image = nueva_imagen_tk
+
+    lbl_info.config(text=f'Pixel en ({x}, {y}) cambiado a {nuevo_color}')
+
+def cambiar_color_por_coordenadas(imagen, panel_mod, lbl_info):
+
+    if imagen is None: return
+
+    x = simpledialog.askinteger('Input', f'Coordenada X (0-{imagen.width-1}):', minvalue=0, maxvalue=imagen.width-1)
+    if x is None: return
+
+    y = simpledialog.askinteger('Input', f'Coordenada Y (0-{imagen.height-1}):', minvalue=0, maxvalue=imagen.height-1)
+    if y is None: return
+
+    rojo = simpledialog.askinteger('Input', 'Rojo (0-255):', minvalue=0, maxvalue=255)
+    if rojo is None: return
+
+    verde = simpledialog.askinteger('Input', 'Verde (0-255)', minvalue=0, maxvalue=255)
+    if verde is None: return
+
+    azul = simpledialog.askinteger('Input', 'Azul (0-255)', minvalue=0, maxvalue=255)
+    if azul is None: return
+
+    nuevo_color = (rojo, verde, azul)
+
+    imagen.putpixel((x, y), nuevo_color)
+
+    nueva_imagen_tk = ImageTk.PhotoImage(imagen)
+    panel_mod.create_image(0, 0, anchor='nw', image=nueva_imagen_tk)
+    panel_mod.image = nueva_imagen_tk
+
+    lbl_info.config(text=f'Pixel en ({x}, {y}) cambiado a {nuevo_color}')
+    
 
 
 
