@@ -147,13 +147,13 @@ def copiar_sector_imagen(img_original, area, panel_mod, lbl_info):
     return img_recortada
 
 
-def restar_imagenes(img1, panel_mod, lbl_info):
+def preparar_y_restar(img1, panel_or, panel_mod, lbl_info):
 
     if img1 is None: 
         messagebox.showwarning('Aviso', 'Carga la primer imagen.')
         return None
 
-    ruta_img2 = filedialog.askopenfile(title='Seleccione la segunda imagen para restar.')
+    ruta_img2 = filedialog.askopenfilename(title='Seleccione la segunda imagen para restar.', filetypes=[('PNG', '*.png'), ('JPEG', '*.jpg')])
     img2 = Image.open(ruta_img2)
 
     if img1.size != img2.size:
@@ -180,14 +180,38 @@ def restar_imagenes(img1, panel_mod, lbl_info):
         else:
             return None
     
-    arr1 = np.array(img1, dtype=np.int16)
-    arr2 = np.array(img2, dtype=np.int16)
+    global tk_img1, tk_img2
+    tk_img1 = ImageTk.PhotoImage(img1)
+    tk_img2 = ImageTk.PhotoImage(img2)
 
-    resultado_arr = np.clip(arr1 - arr2, 0, 255).astype(np.uint8)
-    img_resta = Image.fromarray(resultado_arr)
+    panel_or.delete('all')
+    panel_or.configure(width=img1.width, height=img1.height)
+    panel_or.create_image(0, 0, anchor='nw', image=tk_img1)
+    panel_or.image = tk_img1
 
-    global imagen_tk_modificada
-    
+    panel_mod.delete('all')
+    panel_mod.configure(width=img2.width, height=img2.height)
+    panel_mod.create_image(0, 0, anchor='nw', image=tk_img2)
 
+    lbl_info.configure(text='Imagenes listas. Presione Aceptar para restar.')
 
-    
+    if messagebox.askokcancel('Operacion', 'Restar imagenes?'):
+        arr1= np.array(img1, dtype=np.int16)
+        arr2 = np.array(img2, dtype=np.int16)
+
+        resultado_arr = np.clip(arr1 - arr2, 0, 255).astype(np.uint8)
+        img_resta = Image.fromarray(resultado_arr)
+
+        panel_or.delete('all')
+        panel_or.configure(width=1, height=1)
+
+        global tk_res
+        tk_res = ImageTk.PhotoImage(img_resta)
+        panel_mod.configure(width=img_resta.width, heigh=img_resta.height)
+        panel_mod.create_image(0, 0, anchor='nw', image=tk_res)
+        panel_mod.image = tk_res
+
+        lbl_info.configure(text='Resultado de la resta.')
+        return img_resta
+
+    return None

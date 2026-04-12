@@ -146,6 +146,15 @@ def finalizar_seleccion(event):
     
     activar_modo_recorte()
 
+
+def realizar_resta():
+
+    global imagen_original, imagen_modificada
+    
+    resultado = preparar_y_restar(imagen_original, panel_original, panel_modificado, txt_herramientas)
+    imagen_modificada = resultado
+
+
 boton_cargar_img = tk.Button(zona_botones, text='Cargar imagen', command=cambiar_modo_imagen)
 boton_cargar_img.pack(side='left', padx=10)
 
@@ -160,6 +169,9 @@ boton_cambiar_pixel.pack(side='left', padx=10)
 
 boton_recorte = tk.Button(zona_botones, text='Copiar sector', command=activar_modo_recorte)
 boton_recorte.pack(side='left', padx=10)
+
+boton_restar = tk.Button(zona_botones, text='Restar imagenes', command=realizar_resta)
+boton_restar.pack(side='left', padx=10)
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
 txt_herramientas.pack(pady=10)
