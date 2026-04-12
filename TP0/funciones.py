@@ -215,3 +215,32 @@ def preparar_y_restar(img1, panel_or, panel_mod, lbl_info):
         return img_resta
 
     return None
+
+
+def analizar_region(imagen, area, lbl_info):
+
+    region = imagen.crop(area)
+    ancho, alto = region.size
+    total_pixels = ancho * alto
+    
+    if total_pixels == 0:
+        return
+    
+    datos = np.array(region)
+
+    if len(datos.shape) == 3:
+
+        promedios = np.mean(datos, axis=(0, 1))
+        r_prom = round(promedios[0], 2)
+        v_prom = round(promedios[1], 2)
+        a_prom = round(promedios[2], 2)
+
+        resultado = (f'Region: {ancho}x{alto} - Total px: {total_pixels}\n'
+                     f'Promedio color -> R: {r_prom}, V: {v_prom}, A: {a_prom}')
+    
+    else: 
+        promedio_gris = round(np.mean(datos), 2)
+        resultado = (f'Region: {ancho}x{alto} - Total px: {total_pixels}\n'
+                     f'Promedio gris: {promedio_gris}')
+    
+    lbl_info.configure(text=resultado)

@@ -16,6 +16,7 @@ inicio_rect_y =None
 modo_seleccion = tk.BooleanVar(value=False)
 modo_edicion = tk.BooleanVar(value=False)
 modo_recorte = tk.BooleanVar(value=False)
+modo_analisis = tk.BooleanVar(value=False)
 
 zona_botones = tk.Frame(ventana, pady=10)
 zona_botones.pack(side='top', fill='x')
@@ -41,18 +42,6 @@ def cambiar_modo_imagen():
     global imagen_original, imagen_modificada
     imagen_or, imagen_mod = cargar_imagen(panel_original, panel_modificado)
     imagen_original, imagen_modificada = imagen_or, imagen_mod
-
-
-def obtener_valor_pixel(event):
-
-    global imagen_original
-
-    if modo_seleccion.get() and imagen_original:
-   
-        x, y = event.x, event.y
-        valor = imagen_original.getpixel((x, y))
-
-        txt_herramientas.configure(text=f'Coordenadas: {x}, {y} Valor: {valor}')
 
 
 def activar_modo_edicion():
@@ -108,7 +97,13 @@ def empezar_seleccion(event):
 
     global inicio_rect_x, inicio_rect_y, rect_id
 
-    if modo_recorte.get():
+    if modo_seleccion.get() and imagen_original:
+        x, y = event.x, event.y
+        valor = imagen_original.getpixel((x, y))
+
+        txt_herramientas.configure(text=f'Coordenadas: {x}, {y} Valor: {valor}')
+
+    if modo_recorte.get() or modo_analisis.get():
         inicio_rect_x, inicio_rect_y = event.x, event.y
         rect_id = panel_original.create_rectangle(inicio_rect_x, inicio_rect_y, inicio_rect_x, inicio_rect_y, outline='red', width=2)
 
@@ -117,7 +112,7 @@ def arrastrar_seleccion(event):
 
     global rect_id
 
-    if modo_recorte.get() and rect_id:
+    if modo_recorte.get() or modo_analisis.get() and rect_id:
         nuevo_x, nuevo_y = event.x, event.y
         panel_original.coords(rect_id, inicio_rect_x, inicio_rect_y, nuevo_x, nuevo_y)
 
@@ -126,7 +121,7 @@ def finalizar_seleccion(event):
 
     global imagen_modificada, rect_id, inicio_rect_x, inicio_rect_y
 
-    if modo_recorte.get() and rect_id:
+    if rect_id is not None:
         fin_rect_x, fin_rect_y = event.x, event.y
 
         panel_original.delete(rect_id)
@@ -136,15 +131,19 @@ def finalizar_seleccion(event):
         x_der = max(inicio_rect_x, fin_rect_x)
         y_arr = min(inicio_rect_y, fin_rect_y)
         y_aba = max(inicio_rect_y, fin_rect_y)
-    
         area = (x_izq, y_arr, x_der, y_aba)
-    
-    nueva_img = copiar_sector_imagen(imagen_original, area, panel_modificado, txt_herramientas)
 
-    if nueva_img:
-        imagen_modificada = nueva_img
-    
-    activar_modo_recorte()
+        if modo_recorte.get():
+            nueva_img = copiar_sector_imagen(imagen_original, area, panel_modificado, txt_herramientas)
+
+            if nueva_img:
+                imagen_modificada = nueva_img
+            
+            activar_modo_recorte()
+        
+        elif modo_analisis.get():
+            analizar_region(imagen_original, area, txt_herramientas)
+            activar_modo_analisis()
 
 
 def realizar_resta():
@@ -153,6 +152,24 @@ def realizar_resta():
     
     resultado = preparar_y_restar(imagen_original, panel_original, panel_modificado, txt_herramientas)
     imagen_modificada = resultado
+
+
+def activar_modo_analisis():
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen primero')
+        return
+
+    modo_recorte.set(False)
+    modo_edicion.set(False)
+    modo_analisis.set(not modo_analisis.get())
+
+    if modo_analisis.get():
+        boton_analisis.configure(bg='green', fg='white', text='Modo analisis activado')
+        panel_original.configure(cursor='sizing')
+    else:
+        boton_analisis.configure(bg='#d9d9d9', fg='black', text='Analizar region')
+        panel_original.configure(cursor='arrow')
 
 
 boton_cargar_img = tk.Button(zona_botones, text='Cargar imagen', command=cambiar_modo_imagen)
@@ -173,18 +190,17 @@ boton_recorte.pack(side='left', padx=10)
 boton_restar = tk.Button(zona_botones, text='Restar imagenes', command=realizar_resta)
 boton_restar.pack(side='left', padx=10)
 
+boton_analisis = tk.Button(zona_botones, text='Analizar region', command=activar_modo_analisis)
+boton_analisis.pack(side='left', padx=10)
+
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
 txt_herramientas.pack(pady=10)
-
-panel_original.bind('<Button-1>', obtener_valor_pixel)
 
 panel_modificado.bind('<Button-1>', manejar_clic_modificado)
 
 panel_original.bind('<ButtonPress-1>', empezar_seleccion)
 panel_original.bind('<B1-Motion>', arrastrar_seleccion)
 panel_original.bind('<ButtonRelease-1>', finalizar_seleccion)
-
-
 
 
 ventana.mainloop()
