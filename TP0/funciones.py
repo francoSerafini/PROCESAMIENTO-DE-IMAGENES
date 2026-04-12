@@ -129,6 +129,21 @@ def cambiar_color_por_coordenadas(imagen, panel_mod, lbl_info):
     lbl_info.config(text=f'Pixel en ({x}, {y}) cambiado a {nuevo_color}')
     
 
+def copiar_sector_imagen(img_original, area, panel_mod, lbl_info):
+
+    img_recortada = img_original.crop(area)
+
+    global recorte_tk
+    recorte_tk = ImageTk.PhotoImage(img_recortada)
+
+    panel_mod.delete('all')
+    panel_mod.configure(width=img_recortada.width, height=img_recortada.height)
+    panel_mod.create_image(0, 0, anchor='nw', image=recorte_tk)
+    panel_mod.image = recorte_tk
+
+    lbl_info.configure(text=f'Sector recortado: {img_recortada.width}x{img_recortada.height}')
+    
+    return img_recortada
 
 
     

@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from funciones import cargar_imagen, guardar_imagen, cambiar_modo_seleccion, cambiar_color_pixel, cambiar_color_por_coordenadas
+from funciones import *
 
 ventana = tk.Tk()
 ventana.title('TP0')
@@ -9,8 +9,13 @@ ventana.geometry('1920x1080')
 imagen_original = None
 imagen_modificada = None
 
+rect_id = None
+inicio_rect_x = None
+inicio_rect_y =None
+
 modo_seleccion = tk.BooleanVar(value=False)
 modo_edicion = tk.BooleanVar(value=False)
+modo_recorte = tk.BooleanVar(value=False)
 
 zona_botones = tk.Frame(ventana, pady=10)
 zona_botones.pack(side='top', fill='x')
@@ -36,7 +41,6 @@ def cambiar_modo_imagen():
     global imagen_original, imagen_modificada
     imagen_or, imagen_mod = cargar_imagen(panel_original, panel_modificado)
     imagen_original, imagen_modificada = imagen_or, imagen_mod
-
 
 
 def obtener_valor_pixel(event):
@@ -84,6 +88,64 @@ def manejar_clic_modificado(event):
         cambiar_color_pixel(event, imagen_modificada, panel_modificado, txt_herramientas)
 
 
+def activar_modo_recorte():
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen primero')
+        return
+
+    modo_recorte.set(not modo_recorte.get())
+
+    if modo_recorte.get():
+        boton_recorte.configure(bg='green', fg='white', text='Modo recorte activado')
+        panel_original.configure(cursor='plus')
+    else:
+        boton_recorte.configure(bg="#d9d9d9", fg='black', text='Copiar sector')
+        panel_original.configure(cursor='arrow')
+
+
+def empezar_seleccion(event):
+
+    global inicio_rect_x, inicio_rect_y, rect_id
+
+    if modo_recorte.get():
+        inicio_rect_x, inicio_rect_y = event.x, event.y
+        rect_id = panel_original.create_rectangle(inicio_rect_x, inicio_rect_y, inicio_rect_x, inicio_rect_y, outline='red', width=2)
+
+
+def arrastrar_seleccion(event):
+
+    global rect_id
+
+    if modo_recorte.get() and rect_id:
+        nuevo_x, nuevo_y = event.x, event.y
+        panel_original.coords(rect_id, inicio_rect_x, inicio_rect_y, nuevo_x, nuevo_y)
+
+
+def finalizar_seleccion(event):
+
+    global imagen_modificada, rect_id, inicio_rect_x, inicio_rect_y
+
+    if modo_recorte.get() and rect_id:
+        fin_rect_x, fin_rect_y = event.x, event.y
+
+        panel_original.delete(rect_id)
+        rect_id = None
+
+        x_izq = min(inicio_rect_x, fin_rect_x)
+        x_der = max(inicio_rect_x, fin_rect_x)
+        y_arr = min(inicio_rect_y, fin_rect_y)
+        y_aba = max(inicio_rect_y, fin_rect_y)
+    
+        area = (x_izq, y_arr, x_der, y_aba)
+    
+    nueva_img = copiar_sector_imagen(imagen_original, area, panel_modificado, txt_herramientas)
+
+    if nueva_img:
+        imagen_modificada = nueva_img
+    
+    activar_modo_recorte()
+
 boton_cargar_img = tk.Button(zona_botones, text='Cargar imagen', command=cambiar_modo_imagen)
 boton_cargar_img.pack(side='left', padx=10)
 
@@ -96,12 +158,19 @@ boton_activar_seleccion.pack(side='left', padx=10)
 boton_cambiar_pixel =tk.Button(zona_botones, text='Cambiar color pixel', command=activar_modo_edicion)
 boton_cambiar_pixel.pack(side='left', padx=10)
 
+boton_recorte = tk.Button(zona_botones, text='Copiar sector', command=activar_modo_recorte)
+boton_recorte.pack(side='left', padx=10)
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
 txt_herramientas.pack(pady=10)
 
 panel_original.bind('<Button-1>', obtener_valor_pixel)
+
 panel_modificado.bind('<Button-1>', manejar_clic_modificado)
+
+panel_original.bind('<ButtonPress-1>', empezar_seleccion)
+panel_original.bind('<B1-Motion>', arrastrar_seleccion)
+panel_original.bind('<ButtonRelease-1>', finalizar_seleccion)
 
 
 
