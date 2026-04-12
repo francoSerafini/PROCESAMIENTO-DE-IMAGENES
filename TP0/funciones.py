@@ -1,5 +1,6 @@
 from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
+import numpy as np
 
 imagen_tk_original = None
 imagen_tk_modificada = None
@@ -144,6 +145,49 @@ def copiar_sector_imagen(img_original, area, panel_mod, lbl_info):
     lbl_info.configure(text=f'Sector recortado: {img_recortada.width}x{img_recortada.height}')
     
     return img_recortada
+
+
+def restar_imagenes(img1, panel_mod, lbl_info):
+
+    if img1 is None: 
+        messagebox.showwarning('Aviso', 'Carga la primer imagen.')
+        return None
+
+    ruta_img2 = filedialog.askopenfile(title='Seleccione la segunda imagen para restar.')
+    img2 = Image.open(ruta_img2)
+
+    if img1.size != img2.size:
+        opcion = messagebox.askyesnocancel(
+            'Dimensiones diferentes',
+            'Redimensionar la mas grande? (SI)\n'
+            'Rellenar con ceros la mas chica (NO)'
+        )
+    
+        if opcion is True:
+            if img1.width * img1.height > img2.width * img2.height:
+                img1 = img1.resize(img2.size)
+            else:
+                img2 = img2.resize(img1.size)
+        elif opcion is False:
+            nuevo_ancho = max(img1.width, img2.width)
+            nuevo_alto = max(img1.height, img2.height)
+
+            aux1 = Image.new(img1.mode, (nuevo_ancho, nuevo_alto), 0)
+            aux2 = Image.new(img2.mode, (nuevo_ancho, nuevo_alto), 0)
+            aux1.paste(img1, (0,0))
+            aux2.paste(img2, (0,0))
+            img1, img2 = aux1, aux2
+        else:
+            return None
+    
+    arr1 = np.array(img1, dtype=np.int16)
+    arr2 = np.array(img2, dtype=np.int16)
+
+    resultado_arr = np.clip(arr1 - arr2, 0, 255).astype(np.uint8)
+    img_resta = Image.fromarray(resultado_arr)
+
+    global imagen_tk_modificada
+    
 
 
     
