@@ -18,8 +18,6 @@ modo_edicion = tk.BooleanVar(value=False)
 modo_recorte = tk.BooleanVar(value=False)
 modo_analisis = tk.BooleanVar(value=False)
 
-zona_botones = tk.Frame(ventana, pady=10)
-zona_botones.pack(side='top', fill='x')
 
 zona_imagenes = tk.Frame(ventana, bg='black')
 zona_imagenes.pack(side='top', expand=True, fill='both', padx=10, pady=10)
@@ -59,7 +57,6 @@ def activar_modo_edicion():
     
     def modo_mouse():
         modo_edicion.set(True)
-        boton_cambiar_pixel.configure(text='Modo mouse: ACTIVO', bg='green')
         panel_modificado.configure(cursor='pencil')
         ventana_opciones.destroy()
 
@@ -81,16 +78,15 @@ def activar_modo_recorte():
 
     if imagen_original is None:
         messagebox.showwarning('Aviso', 'Carga una imagen primero')
+        modo_recorte.set(False)
         return
-
-    modo_recorte.set(not modo_recorte.get())
-
+    
     if modo_recorte.get():
-        boton_recorte.configure(bg='green', fg='white', text='Modo recorte activado')
         panel_original.configure(cursor='plus')
+        txt_herramientas.configure(text='Modo recorte: Seleccione un area en la imagen original.')
     else:
-        boton_recorte.configure(bg="#d9d9d9", fg='black', text='Copiar sector')
         panel_original.configure(cursor='arrow')
+        txt_herramientas.configure(text='Herramienta desactivada')
 
 
 def empezar_seleccion(event):
@@ -158,17 +154,15 @@ def activar_modo_analisis():
 
     if imagen_original is None:
         messagebox.showwarning('Aviso', 'Carga una imagen primero')
+        modo_analisis.set(False)
         return
-
-    modo_recorte.set(False)
-    modo_edicion.set(False)
-    modo_analisis.set(not modo_analisis.get())
-
+    
     if modo_analisis.get():
-        boton_analisis.configure(bg='green', fg='white', text='Modo analisis activado')
+        modo_recorte.set(False)
+        modo_edicion.set(False)
         panel_original.configure(cursor='sizing')
-    else:
-        boton_analisis.configure(bg='#d9d9d9', fg='black', text='Analizar region')
+        txt_herramientas.configure(text='Modo analisis: DIbuje un rectangulo en la zona deseada.')
+    else: 
         panel_original.configure(cursor='arrow')
 
 def ejecutar_gamma():
@@ -200,31 +194,48 @@ def ejecutar_gamma():
 
     txt_herramientas.configure(text=f'Transformacion realizada con gamma {valor_gamma}')
 
+def ejecutar_negativo():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen primero')
+
+    imagen_modificada = aplicar_negativo(imagen_original)
+
+    global tk_negativo
+    tk_negativo = ImageTk.PhotoImage(imagen_modificada)
+
+    panel_modificado.delete('all')
+    panel_modificado.configure(width=imagen_modificada.width, height=imagen_modificada.height)
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_negativo)
+
+    txt_herramientas.configure(text=f'Negativo aplicado.')
 
 
-boton_cargar_img = tk.Button(zona_botones, text='Cargar imagen', command=cambiar_modo_imagen)
-boton_cargar_img.pack(side='left', padx=10)
+barra_menu = tk.Menu(ventana)
+ventana.configure(menu=barra_menu)
 
-boton_guardar_img = tk.Button(zona_botones, text='Guardar imagen modificada', command=lambda: guardar_imagen(imagen_modificada))
-boton_guardar_img.pack(side='left', padx=10)
+menu_archivo = tk.Menu(barra_menu, tearoff=0)
+barra_menu.add_cascade(label='Archivo', menu=menu_archivo)
+menu_archivo.add_command(label='Cargar Imangen', command=cambiar_modo_imagen)
+menu_archivo.add_command(label='Guardar como...', command=lambda: guardar_imagen(imagen_modificada))
+menu_archivo.add_separator()
+menu_archivo.add_command(label='Salir', command=ventana.quit)
 
-boton_activar_seleccion = tk.Button(zona_botones, text='Activar Seleccion', command = lambda: cambiar_modo_seleccion(panel_original, panel_modificado, boton_activar_seleccion, modo_seleccion, imagen_original))
-boton_activar_seleccion.pack(side='left', padx=10)
+menu_operadores = tk.Menu(barra_menu, tearoff=0)
+barra_menu.add_cascade(label='Operadores', menu=menu_operadores)
+menu_operadores.add_command(label='Restar imagenes', command=realizar_resta)
+menu_operadores.add_command(label='Transformacion Gamma', command=ejecutar_gamma)
+menu_operadores.add_command(label='Aplicar negativo', command=ejecutar_negativo)
 
-boton_cambiar_pixel =tk.Button(zona_botones, text='Cambiar color pixel', command=activar_modo_edicion)
-boton_cambiar_pixel.pack(side='left', padx=10)
-
-boton_recorte = tk.Button(zona_botones, text='Copiar sector', command=activar_modo_recorte)
-boton_recorte.pack(side='left', padx=10)
-
-boton_restar = tk.Button(zona_botones, text='Restar imagenes', command=realizar_resta)
-boton_restar.pack(side='left', padx=10)
-
-boton_analisis = tk.Button(zona_botones, text='Analizar region', command=activar_modo_analisis)
-boton_analisis.pack(side='left', padx=10)
-
-boton_gamma = tk.Button(zona_botones, text='Transformacion gamma', command=ejecutar_gamma)
-boton_gamma.pack(side='left', padx=10)
+menu_herramientas = tk.Menu(barra_menu, tearoff=0)
+barra_menu.add_cascade(label='Herramientas', menu=menu_herramientas)
+menu_herramientas.add_checkbutton(label='Modo seleccion (Pixel)', variable=modo_seleccion, command=lambda: cambiar_modo_seleccion(panel_original, panel_modificado, modo_seleccion, imagen_original))
+menu_herramientas.add_command(label='Cambiar color pixel', command=activar_modo_edicion)
+menu_herramientas.add_separator()
+menu_herramientas.add_checkbutton(label='Recortar region', variable=modo_recorte, command=activar_modo_recorte)
+menu_herramientas.add_checkbutton(label='Analizar region', variable=modo_analisis, command=activar_modo_analisis)
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
 txt_herramientas.pack(pady=10)

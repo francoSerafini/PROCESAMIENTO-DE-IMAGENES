@@ -76,24 +76,19 @@ def guardar_imagen(imagen_modificada):
         messagebox.showinfo('Exito', 'Imagen guardada')
 
 
-def cambiar_modo_seleccion(panel_or, panel_mod, boton_activar, var_modo, imagen):
+def cambiar_modo_seleccion(panel_or, panel_mod, var_modo, imagen):
 
     if imagen is None:
         messagebox.showwarning('Aviso', 'Primero debes cargar una imagen para activar el modo seleccion.')
+        var_modo.set(False)
         return
     
-    modo_seleccion = not var_modo.get()
-    var_modo.set(modo_seleccion)
-
-    if modo_seleccion:
-        boton_activar.configure(text='Seleccion: ACTIVADO', bg='green', fg='white', activebackground='darkgreen')
+    if var_modo.get():
         panel_or.configure(cursor='cross')
         panel_mod.configure(cursor='cross')
     else:
-        boton_activar.configure(text='Activar Seleccion', bg='#d9d9d9', fg='black', activebackground='#ececec')
-        panel_or.configure(cursor = 'arrow')
-        panel_mod.configure(cursor = 'arrow')
-
+        panel_mod.configure(cursor='arrow')
+        panel_or.configure(cursor='arrow')
 
 def cambiar_color_pixel(event, imagen, panel_mod, lbl_info):
 
@@ -267,6 +262,7 @@ def analizar_region(imagen, area, lbl_info):
     
     lbl_info.configure(text=resultado)
 
+
 def funcion_gamma(imagen, gamma):
 
     c = 255 / (255**gamma)
@@ -289,6 +285,27 @@ def funcion_gamma(imagen, gamma):
     
     imagen_transformada = Image.fromarray(arr_imagen)
     return imagen_transformada
+
+
+def aplicar_negativo(imagen):
+
+    arr_imagen = np.array(imagen)
+
+    if len(arr_imagen.shape) == 2:
+        for x in range(arr_imagen.shape[0]):
+            for y in range(arr_imagen.shape[1]):
+                
+                arr_imagen[x][y] = 255 - arr_imagen[x][y]
+    
+    else:
+        for x in range(arr_imagen.shape[0]):
+            for y in range(arr_imagen.shape[1]):
+                for canal in range(arr_imagen.shape[2]):
+
+                    arr_imagen[x][y][canal] = 255 - arr_imagen[x][y][canal]
+    
+    imagen_negativa = Image.fromarray(arr_imagen)
+    return imagen_negativa
 
 
 
