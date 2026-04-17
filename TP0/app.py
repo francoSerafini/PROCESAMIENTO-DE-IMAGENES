@@ -171,6 +171,36 @@ def activar_modo_analisis():
         boton_analisis.configure(bg='#d9d9d9', fg='black', text='Analizar region')
         panel_original.configure(cursor='arrow')
 
+def ejecutar_gamma():
+    
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen primero')
+        return
+
+    valor_gamma = simpledialog.askfloat('Transformacion Gamma', 'Ingrse valor Gamma mayor que 0, menor que 2 y distinto de 1')
+
+    if valor_gamma is None: return
+
+    if valor_gamma < 0 or valor_gamma > 2 or valor_gamma == 1:
+        messagebox.showerror('Error', 'Ingrese un valor gamma valido')
+        return
+    
+    resultado = funcion_gamma(imagen_original, valor_gamma)
+
+    imagen_modificada = resultado
+
+    global tk_gamma
+    tk_gamma = ImageTk.PhotoImage(imagen_modificada)
+
+    panel_modificado.delete('all')
+    panel_modificado.configure(width=imagen_modificada.width, height=imagen_modificada.height)
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_gamma)
+
+    txt_herramientas.configure(text=f'Transformacion realizada con gamma {valor_gamma}')
+
+
 
 boton_cargar_img = tk.Button(zona_botones, text='Cargar imagen', command=cambiar_modo_imagen)
 boton_cargar_img.pack(side='left', padx=10)
@@ -192,6 +222,9 @@ boton_restar.pack(side='left', padx=10)
 
 boton_analisis = tk.Button(zona_botones, text='Analizar region', command=activar_modo_analisis)
 boton_analisis.pack(side='left', padx=10)
+
+boton_gamma = tk.Button(zona_botones, text='Transformacion gamma', command=ejecutar_gamma)
+boton_gamma.pack(side='left', padx=10)
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
 txt_herramientas.pack(pady=10)

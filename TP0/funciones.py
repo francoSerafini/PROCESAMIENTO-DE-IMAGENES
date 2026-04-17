@@ -6,6 +6,14 @@ imagen_tk_original = None
 imagen_tk_modificada = None
 
 
+def cargar_raw(ruta, ancho, alto, profundidad='unit8'):
+    
+    with open(ruta, 'rb') as f:
+        datos = np.fromfile(f, dtype=profundidad)
+
+    matriz = datos.reshape((alto, ancho))
+    return Image.fromarray(matriz)
+
 def cargar_imagen(panel_or, panel_mod):
 
     global imagen_original, imagen_tk_original
@@ -13,29 +21,43 @@ def cargar_imagen(panel_or, panel_mod):
 
     ruta = filedialog.askopenfilename(
         title='Seleccionar imagen',
-        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png')]
+        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png, *.RAW')]
         )
     
-    if ruta:
+    extension, nombre = ruta.lower().split('.')[-1], ruta.lower().split('/')[-1]
+
+    if extension == 'raw':
+        ancho = simpledialog.askinteger('Configuracion RAW', f'Ancho img {nombre} (px):')
+        alto = simpledialog.askinteger('Configuracion RAW', f'Alto img {nombre} (px)')
+
+        if not ancho or not alto: return
+
+        with open(ruta, 'rb') as f:
+            datos = np.fromfile(f, dtype=np.uint8)
+            matriz = datos.reshape((alto, ancho))
+            imagen_original = Image.fromarray(matriz)
+    
+    else:
         imagen_original = Image.open(ruta)
-        imagen_modificada = imagen_original.copy()
+    
+    imagen_modificada = imagen_original.copy()
 
-        if imagen_original.height > 960 or imagen_original.width > 540:
-            imagen_original = imagen_original.resize((960, 540))
-            imagen_modificada = imagen_modificada.resize((960, 540))
-            
-        imagen_tk_original = ImageTk.PhotoImage(imagen_original)
-        imagen_tk_modificada = ImageTk.PhotoImage(imagen_modificada)
+    if imagen_original.height > 960 or imagen_original.width > 540:
+        imagen_original = imagen_original.resize((960, 540))
+        imagen_modificada = imagen_modificada.resize((960, 540))
+        
+    imagen_tk_original = ImageTk.PhotoImage(imagen_original)
+    imagen_tk_modificada = ImageTk.PhotoImage(imagen_modificada)
 
-        panel_or.configure(width=imagen_original.width, height=imagen_original.height)
-        panel_or.create_image(0, 0, anchor='nw', image=imagen_tk_original)
-        panel_or.image = imagen_tk_original
+    panel_or.configure(width=imagen_original.width, height=imagen_original.height)
+    panel_or.create_image(0, 0, anchor='nw', image=imagen_tk_original)
+    panel_or.image = imagen_tk_original
 
-        panel_mod.configure(width=imagen_modificada.width, height=imagen_modificada.height)
-        panel_mod.create_image(0, 0, anchor='nw', image=imagen_tk_modificada)
-        panel_mod.image = imagen_tk_modificada
+    panel_mod.configure(width=imagen_modificada.width, height=imagen_modificada.height)
+    panel_mod.create_image(0, 0, anchor='nw', image=imagen_tk_modificada)
+    panel_mod.image = imagen_tk_modificada
 
-        return imagen_original, imagen_modificada
+    return imagen_original, imagen_modificada
 
 
 def guardar_imagen(imagen_modificada):
@@ -153,7 +175,7 @@ def preparar_y_restar(img1, panel_or, panel_mod, lbl_info):
         messagebox.showwarning('Aviso', 'Carga la primer imagen.')
         return None
 
-    ruta_img2 = filedialog.askopenfilename(title='Seleccione la segunda imagen para restar.', filetypes=[('PNG', '*.png'), ('JPEG', '*.jpg')])
+    ruta_img2 = filedialog.askopenfilename(title='Seleccione la segunda imagen para restar.', filetypes=[('JPEG', '*.jpg') ,('PNG', '*.png')])
     img2 = Image.open(ruta_img2)
 
     if img1.size != img2.size:
@@ -244,3 +266,31 @@ def analizar_region(imagen, area, lbl_info):
                      f'Promedio gris: {promedio_gris}')
     
     lbl_info.configure(text=resultado)
+
+def funcion_gamma(imagen, gamma):
+
+    c = 255 / (255**gamma)
+    
+    arr_imagen = np.array(imagen)
+
+    if len(arr_imagen.shape) == 2:
+        for x in range(arr_imagen.shape[0]):
+            for y in range(arr_imagen.shape[1]):
+                
+                r = arr_imagen[x][y]
+                arr_imagen[x][y] = c*(r**gamma)
+    
+    else:
+        for x in range(arr_imagen.shape[0]):
+            for y in range(arr_imagen.shape[1]):
+                for canal in range(arr_imagen.shape[2]):
+                    rcanal = arr_imagen[x][y][canal]
+                    arr_imagen[x][y][canal] = c*(rcanal**gamma)
+    
+    imagen_transformada = Image.fromarray(arr_imagen)
+    return imagen_transformada
+
+
+
+
+    
