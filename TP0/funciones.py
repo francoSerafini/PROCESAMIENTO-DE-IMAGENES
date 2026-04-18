@@ -216,8 +216,11 @@ def preparar_y_restar(img1, panel_or, panel_mod, lbl_info):
         arr1= np.array(img1, dtype=np.int16)
         arr2 = np.array(img2, dtype=np.int16)
 
-        resultado_arr = np.clip(arr1 - arr2, 0, 255).astype(np.uint8)
-        img_resta = Image.fromarray(resultado_arr)
+        resta_arr = arr1 - arr2
+        min_resta, max_resta = np.min(resta_arr), np.max(resta_arr)
+        resta_arr = ((resta_arr - min_resta) / (max_resta - min_resta)) * 255
+        resta_arr = resta_arr.astype(np.uint8)
+        img_resta = Image.fromarray(resta_arr)
 
         panel_or.delete('all')
         panel_or.configure(width=1, height=1)
