@@ -222,7 +222,7 @@ def ejecutar_negativo():
 def ejecutar_histograma():
 
     if imagen_original is None:
-        messagebox.showwarning('Aviso', 'Carga una imagen en blanco y negro primero')
+        messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
         return
     
     frecuencias = obtener_histograma(imagen_original)
@@ -235,11 +235,39 @@ def ejecutar_histograma():
     plt.title('Histograma de la imagen original')
     plt.xlabel('Nivel de gris (0-255)')
     plt.ylabel('Cantidad de pixeles')
-    plt.xlim([0, 255])
+    plt.xlim([-5, 260])
     plt.grid(axis='y', alpha=0.3)
     plt.show()
-    
 
+
+def ejecutar_binarizacion():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
+        return
+
+    umbral = simpledialog.askinteger('UMBRAL', 'Ingrese un umbral entre 0 y 255.')
+
+    if umbral is None: return
+    
+    if umbral < 0 or umbral > 255:
+        messagebox.showerror('ERROR', 'El valor del umbral debe ser entre 0 y 255')
+        return
+
+    imagen_modificada = binarizar_imagen(imagen_original, umbral)
+
+    global binarizada_tk
+    binarizada_tk = ImageTk.PhotoImage(imagen_modificada)
+
+    panel_modificado.delete('all')
+    panel_modificado.configure(width=imagen_modificada.width, height=imagen_modificada.height)
+    panel_modificado.create_image(0, 0, anchor='nw', image=binarizada_tk)
+    
+    txt_herramientas.configure(text=f'Binarizacion aplicada con umbral {umbral}')
+
+    
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
 
@@ -255,6 +283,8 @@ barra_menu.add_cascade(label='Operadores', menu=menu_operadores)
 menu_operadores.add_command(label='Restar imagenes', command=realizar_resta)
 menu_operadores.add_command(label='Transformacion Gamma', command=ejecutar_gamma)
 menu_operadores.add_command(label='Aplicar negativo', command=ejecutar_negativo)
+menu_operadores.add_command(label='Binarizar imagen', command=ejecutar_binarizacion)
+
 
 menu_herramientas = tk.Menu(barra_menu, tearoff=0)
 barra_menu.add_cascade(label='Herramientas', menu=menu_herramientas)
@@ -264,6 +294,7 @@ menu_herramientas.add_separator()
 menu_herramientas.add_checkbutton(label='Recortar region', variable=modo_recorte, command=activar_modo_recorte)
 menu_herramientas.add_checkbutton(label='Analizar region', variable=modo_analisis, command=activar_modo_analisis)
 menu_herramientas.add_command(label='Generar Histograma', command=ejecutar_histograma)
+
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
 txt_herramientas.pack(pady=10)

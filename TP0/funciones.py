@@ -21,7 +21,7 @@ def cargar_imagen(panel_or, panel_mod):
 
     ruta = filedialog.askopenfilename(
         title='Seleccionar imagen',
-        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png, *.RAW')]
+        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.RAW')]
         )
     
     extension, nombre = ruta.lower().split('.')[-1], ruta.lower().split('/')[-1]
@@ -67,7 +67,7 @@ def guardar_imagen(imagen_modificada):
         return
 
     ruta_guardar = filedialog.asksaveasfilename(
-        defaultextension='.jpg',
+        defaultextension='.png',
         filetypes=[('PNG', '*.png'), ('JPEG', '*.jpg')]
     )
 
@@ -321,7 +321,22 @@ def obtener_histograma(imagen):
     return frecuencias
 
 
+def binarizar_imagen(imagen, umbral):
 
+    arr_iamgen = np.array(imagen)
+
+    for x in range(arr_iamgen.shape[0]):
+        for y in range(arr_iamgen.shape[1]):
+            
+            r = arr_iamgen[x][y]
+
+            if r >= umbral:
+                arr_iamgen[x][y] = 255
+            else:
+                arr_iamgen[x][y] = 0
+    
+    imagen_binarizada = Image.fromarray(arr_iamgen)
+    return imagen_binarizada
 
 
     
