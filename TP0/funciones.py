@@ -339,4 +339,40 @@ def binarizar_imagen(imagen, umbral):
     return imagen_binarizada
 
 
+def obtener_prob_y_norm(valor, suma, s_min, total_pixeles):
+
+    prob = valor / total_pixeles
+    s_k = prob + suma
+    if s_min == 0 and s_k != 0: s_min = s_k
+    s_k_norm = 255 * ((s_k- s_min) / (1 - s_min))
+
+    return s_k, round(s_k_norm), s_min
+
+
+def aplicar_ecualizacion(imagen):
+
+    frecuencias = obtener_histograma(imagen)
+    arr_imagen = np.array(imagen)
+    acum = 0
+    s_min = 0
+    total_pixeles = sum(frecuencias.values())
+    tabla = {}
+
+    for i in range(256):
+
+        frecuencia = frecuencias.get(i, 0)
+
+        acum, s_k_norm, s_min = obtener_prob_y_norm(frecuencia, acum, s_min, total_pixeles)
+        tabla[i] = s_k_norm
+    
+    for x in range(arr_imagen.shape[0]):
+        for y in range(arr_imagen.shape[1]):
+            
+            valor_actual = arr_imagen[x][y]
+            arr_imagen[x][y] = tabla[valor_actual]
+    
+    return Image.fromarray(arr_imagen)
+
+
+
     

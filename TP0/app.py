@@ -267,13 +267,30 @@ def ejecutar_binarizacion():
     
     txt_herramientas.configure(text=f'Binarizacion aplicada con umbral {umbral}')
 
+
+def ejecutar_ecualizacion():
+
+    global imagen_original, imagen_modificada
+    
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
+        return
+    
+    imagen_modificada = aplicar_ecualizacion(imagen_modificada)
+
+    global tk_ecualizada
+    tk_ecualizada = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_ecualizada)
+
+    txt_herramientas.configure(text='Imagen binarizada')
     
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
 
 menu_archivo = tk.Menu(barra_menu, tearoff=0)
 barra_menu.add_cascade(label='Archivo', menu=menu_archivo)
-menu_archivo.add_command(label='Cargar Imangen', command=cambiar_modo_imagen)
+menu_archivo.add_command(label='Cargar Imagen', command=cambiar_modo_imagen)
 menu_archivo.add_command(label='Guardar como...', command=lambda: guardar_imagen(imagen_modificada))
 menu_archivo.add_separator()
 menu_archivo.add_command(label='Salir', command=ventana.quit)
@@ -284,7 +301,7 @@ menu_operadores.add_command(label='Restar imagenes', command=realizar_resta)
 menu_operadores.add_command(label='Transformacion Gamma', command=ejecutar_gamma)
 menu_operadores.add_command(label='Aplicar negativo', command=ejecutar_negativo)
 menu_operadores.add_command(label='Binarizar imagen', command=ejecutar_binarizacion)
-
+menu_operadores.add_command(label='Ecualizar imagen', command=ejecutar_ecualizacion)
 
 menu_herramientas = tk.Menu(barra_menu, tearoff=0)
 barra_menu.add_cascade(label='Herramientas', menu=menu_herramientas)
