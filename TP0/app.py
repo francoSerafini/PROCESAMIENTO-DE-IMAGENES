@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
+import matplotlib.pyplot as plt
 from funciones import *
 
 ventana = tk.Tk()
@@ -38,6 +39,8 @@ panel_modificado.pack(expand=True)
 def cambiar_modo_imagen():
 
     global imagen_original, imagen_modificada
+    panel_original.delete('all')
+
     imagen_or, imagen_mod = cargar_imagen(panel_original, panel_modificado)
     imagen_original, imagen_modificada = imagen_or, imagen_mod
 
@@ -120,28 +123,29 @@ def finalizar_seleccion(event):
     if rect_id is not None:
         fin_rect_x, fin_rect_y = event.x, event.y
 
-        panel_original.delete(rect_id)
-        rect_id = None
-
         x_izq = min(inicio_rect_x, fin_rect_x)
         x_der = max(inicio_rect_x, fin_rect_x)
         y_arr = min(inicio_rect_y, fin_rect_y)
         y_aba = max(inicio_rect_y, fin_rect_y)
         area = (x_izq, y_arr, x_der, y_aba)
 
-        if modo_recorte.get():
-            nueva_img = copiar_sector_imagen(imagen_original, area, panel_modificado, txt_herramientas)
-
-            if nueva_img:
-                imagen_modificada = nueva_img
-            
-            activar_modo_recorte()
-        
-        elif modo_analisis.get():
+        if modo_analisis.get():
+            panel_original.itemconfig(rect_id, outline='green', width=2)
             analizar_region(imagen_original, area, txt_herramientas)
-            activar_modo_analisis()
 
+        else:
+            panel_original.delete(rect_id)
+            
+            if modo_recorte.get():
+                nueva_img = copiar_sector_imagen(imagen_original, area, panel_modificado, txt_herramientas)
+            
+                if nueva_img:
+                    imagen_modificada = nueva_img
+                activar_modo_recorte()
 
+    rect_id = None
+    
+     
 def realizar_resta():
 
     global imagen_original, imagen_modificada
@@ -163,6 +167,8 @@ def activar_modo_analisis():
         panel_original.configure(cursor='sizing')
         txt_herramientas.configure(text='Modo analisis: DIbuje un rectangulo en la zona deseada.')
     else: 
+        panel_original.delete('all')
+        panel_original.create_image(0, 0, anchor='nw', image=panel_original.image)
         panel_original.configure(cursor='arrow')
 
 def ejecutar_gamma():
@@ -213,6 +219,27 @@ def ejecutar_negativo():
     txt_herramientas.configure(text=f'Negativo aplicado.')
 
 
+def ejecutar_histograma():
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen en blanco y negro primero')
+        return
+    
+    frecuencias = obtener_histograma(imagen_original)
+
+    valores = list(frecuencias.keys())
+    conteo = list(frecuencias.values())
+
+    plt.figure(figsize=(8, 5))
+    plt.bar(valores, conteo, color='gray', width=1.0)
+    plt.title('Histograma de la imagen original')
+    plt.xlabel('Nivel de gris (0-255)')
+    plt.ylabel('Cantidad de pixeles')
+    plt.xlim([0, 255])
+    plt.grid(axis='y', alpha=0.3)
+    plt.show()
+    
+
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
 
@@ -236,6 +263,7 @@ menu_herramientas.add_command(label='Cambiar color pixel', command=activar_modo_
 menu_herramientas.add_separator()
 menu_herramientas.add_checkbutton(label='Recortar region', variable=modo_recorte, command=activar_modo_recorte)
 menu_herramientas.add_checkbutton(label='Analizar region', variable=modo_analisis, command=activar_modo_analisis)
+menu_herramientas.add_command(label='Generar Histograma', command=ejecutar_histograma)
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
 txt_herramientas.pack(pady=10)

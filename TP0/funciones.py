@@ -259,6 +259,7 @@ def analizar_region(imagen, area, lbl_info):
                      f'Promedio color -> R: {r_prom}, V: {v_prom}, A: {a_prom}')
     
     else: 
+        
         promedio_gris = round(np.mean(datos), 2)
         resultado = (f'Region: {ancho}x{alto} - Total px: {total_pixels}\n'
                      f'Promedio gris: {promedio_gris}')
@@ -309,6 +310,16 @@ def aplicar_negativo(imagen):
     
     imagen_negativa = Image.fromarray(arr_imagen)
     return imagen_negativa
+
+
+def obtener_histograma(imagen):
+
+    arr_imagen = np.array(imagen)
+    cant_valores_unicos = np.unique(arr_imagen, return_counts=True)
+    frecuencias = dict(zip(cant_valores_unicos[0], cant_valores_unicos[1]))
+
+    return frecuencias
+
 
 
 
