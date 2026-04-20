@@ -276,14 +276,14 @@ def ejecutar_ecualizacion():
         messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
         return
     
-    imagen_modificada = aplicar_ecualizacion(imagen_modificada)
+    imagen_modificada = aplicar_ecualizacion(imagen_original)
 
     global tk_ecualizada
     tk_ecualizada = ImageTk.PhotoImage(imagen_modificada)
     panel_modificado.delete('all')
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_ecualizada)
 
-    txt_herramientas.configure(text='Imagen binarizada')
+    txt_herramientas.configure(text='Imagen ecualizada.')
     
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
