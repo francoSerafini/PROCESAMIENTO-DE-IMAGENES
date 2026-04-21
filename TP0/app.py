@@ -284,6 +284,19 @@ def ejecutar_ecualizacion():
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_ecualizada)
 
     txt_herramientas.configure(text='Imagen ecualizada.')
+
+
+def ejecutar_contaminacion_gauss():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
+    
+    porcentaje = simpledialog.askinteger('Porcentaje', 'Ingrese un porcentaje entre 0 y 100')
+    sigma = simpledialog.askinteger('Desviacion', 'Ingrese el valor de desviacion')
+
+    imagen_contamida = contaminar_ruido_gaus(imagen_original, porcentaje, sigma)
     
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)

@@ -1,5 +1,6 @@
 from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
+import matplotlib.pyplot as plt
 import numpy as np
 
 imagen_tk_original = None
@@ -374,5 +375,60 @@ def aplicar_ecualizacion(imagen):
     return Image.fromarray(arr_imagen)
 
 
+def generar_datos_gauss(mu, sigma, cant=10000, graficar_distribucion=False):
 
+    datos_gauss = np.random.normal(mu, sigma, cant)
+
+    if graficar_distribucion:
+
+        plt.figure(figsize=(8, 5))
+        plt.hist(datos_gauss, bins=50, color='skyblue', edgecolor='black', alpha=0.7)
+        plt.title(f'Distribucion Gaussiana mu={mu}, sigma={sigma}')
+        plt.xlabel('Numeros')
+        plt.ylabel('Densidad')
+        plt.show()
+    
+    return datos_gauss
+
+
+def generar_datos_exponecial(lambd, cant=10000, graficar_distribucion=False):
+
+    datos_exp = np.random.exponential(1/lambd, cant)
+
+    if graficar_distribucion:
+
+        plt.figure(figsize=(8,5))
+        plt.hist(datos_exp, bins=50, color='skyblue', edgecolor='black', alpha=0.7)
+        plt.title(f'Distribucion exponencial lambda {lambd}')
+        plt.xlabel('Numeros')
+        plt.ylabel('Densidad')
+        plt.show()
+
+
+def contaminar_ruido_gaus(imagen, porcentaje, sigma):
+
+    arr_imagen = np.array(imagen)
+    cant_pixeles = (arr_imagen.shape[0] * arr_imagen.shape[1]) 
+    cant_a_elegir = cant_pixeles * (porcentaje / 100)
+
+    coord_posibles = np.argwhere(np.ones(arr_imagen.shape))
+
+    indices = np.random.choice(len(coord_posibles), cant_a_elegir, replace=False)
+    seleccionadas = coord_posibles[indices]
+
+    datos_gauss = generar_datos_gauss(0, sigma, cant_a_elegir)
+
+    for i in range(cant_a_elegir):
+        fila, col = seleccionadas[i][0], seleccionadas[i][1]
+        arr_imagen[fila][col] += datos_gauss[i]
+        
+    arr_imagen = np.clip(arr_imagen, 0, 255)
+
+    imagen_contaminada = Image.fromarray(arr_imagen)
+
+    return imagen_contaminada
+    
+
+
+    
     
