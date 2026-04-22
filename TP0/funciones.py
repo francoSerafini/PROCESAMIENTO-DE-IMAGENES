@@ -404,22 +404,23 @@ def generar_datos_exponecial(lambd, cant=10000, graficar_distribucion=False):
         plt.ylabel('Densidad')
         plt.show()
 
+    return datos_exp
 
 def contaminar_ruido_gaus(imagen, porcentaje, sigma):
 
     arr_imagen = np.array(imagen).astype(np.float64)
     filas, columnas = arr_imagen.shape 
     cant_pixeles = filas * columnas
-    cant_a_elegir = int(cant_pixeles * (porcentaje / 100))
+    cant_a_contaminar = int(cant_pixeles * (porcentaje / 100))
 
     coord_posibles = np.argwhere(np.ones(arr_imagen.shape))
 
-    indices = np.random.choice(len(coord_posibles), cant_a_elegir, replace=False)
+    indices = np.random.choice(len(coord_posibles), cant_a_contaminar, replace=False)
     seleccionadas = coord_posibles[indices]
 
-    datos_gauss = generar_datos_gauss(0, sigma, cant_a_elegir)
+    datos_gauss = generar_datos_gauss(0, sigma, cant_a_contaminar)
 
-    for i in range(cant_a_elegir):
+    for i in range(cant_a_contaminar):
         fila, col = seleccionadas[i][0], seleccionadas[i][1]
         arr_imagen[fila][col] += datos_gauss[i]
         
@@ -429,6 +430,30 @@ def contaminar_ruido_gaus(imagen, porcentaje, sigma):
 
     return imagen_contaminada
     
+
+def contaminar_ruido_exponencial(imagen, porcentaje, lambd):
+
+    arr_imagen = np.array(imagen).astype(np.float64)
+    filas, columnas = arr_imagen.shape
+    cant_pixeles = filas * columnas
+    cant_a_contaminar = int(cant_pixeles * (porcentaje/100))
+
+    coord_posibles = np.argwhere(np.ones(arr_imagen.shape))
+    
+    indices = np.random.choice(len(coord_posibles), cant_a_contaminar, replace=False)
+    seleccionadas = coord_posibles[indices]
+
+    datos_exp = generar_datos_exponecial(lambd, cant_a_contaminar)
+
+    for i in range(cant_a_contaminar):
+        fila, col = seleccionadas[i][0], seleccionadas[i][1]
+        arr_imagen[fila][col] = arr_imagen[fila][col] * datos_exp[i]
+    
+    arr_imagen = np.clip(arr_imagen, 0, 255).astype(np.uint8)
+
+    imagen_contaminada = Image.fromarray(arr_imagen)
+
+    return imagen_contaminada
 
 
     

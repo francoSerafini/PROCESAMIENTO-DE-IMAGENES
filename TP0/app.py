@@ -304,7 +304,28 @@ def ejecutar_contaminacion_gauss():
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_cont_gauss)
 
     txt_herramientas.config(text=f'{porcentaje}% de la imagen contaminada con ruido Gussiano.')
-    
+
+
+def ejecutar_contaminacion_exp():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
+
+    porcentaje = simpledialog.askinteger('Porcentaje', 'Ingrese un porcentaje entre 0 y 100')
+    lamb = simpledialog.askfloat('lambda', 'Ingrese valor de lambda > 0.')
+
+    imagen_contaminada = contaminar_ruido_exponencial(imagen_original, porcentaje, lamb)
+
+    global tk_imagen_cont_exp
+    tk_imagen_cont_exp = ImageTk.PhotoImage(imagen_contaminada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_imagen_cont_exp)
+
+    txt_herramientas.configure(text=f'{porcentaje}% de la imagen contaminada con ruido exponencial.')
+
+
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
 
@@ -332,6 +353,7 @@ menu_herramientas.add_checkbutton(label='Recortar region', variable=modo_recorte
 menu_herramientas.add_checkbutton(label='Analizar region', variable=modo_analisis, command=activar_modo_analisis)
 menu_herramientas.add_command(label='Generar Histograma', command=ejecutar_histograma)
 menu_herramientas.add_command(label='Contaminar con Gauss', command=ejecutar_contaminacion_gauss)
+menu_herramientas.add_command(label='Contaminar ruido exponencial', command=ejecutar_contaminacion_exp)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
