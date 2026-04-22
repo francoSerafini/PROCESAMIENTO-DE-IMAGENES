@@ -43,9 +43,9 @@ def cargar_imagen(panel_or, panel_mod):
     
     imagen_modificada = imagen_original.copy()
 
-    if imagen_original.height > 960 or imagen_original.width > 540:
-        imagen_original = imagen_original.resize((960, 540))
-        imagen_modificada = imagen_modificada.resize((960, 540))
+    
+    imagen_original = imagen_original.resize((960, 540))
+    imagen_modificada = imagen_modificada.resize((960, 540))
         
     imagen_tk_original = ImageTk.PhotoImage(imagen_original)
     imagen_tk_modificada = ImageTk.PhotoImage(imagen_modificada)
@@ -407,9 +407,10 @@ def generar_datos_exponecial(lambd, cant=10000, graficar_distribucion=False):
 
 def contaminar_ruido_gaus(imagen, porcentaje, sigma):
 
-    arr_imagen = np.array(imagen)
-    cant_pixeles = (arr_imagen.shape[0] * arr_imagen.shape[1]) 
-    cant_a_elegir = cant_pixeles * (porcentaje / 100)
+    arr_imagen = np.array(imagen).astype(np.float64)
+    filas, columnas = arr_imagen.shape 
+    cant_pixeles = filas * columnas
+    cant_a_elegir = int(cant_pixeles * (porcentaje / 100))
 
     coord_posibles = np.argwhere(np.ones(arr_imagen.shape))
 
@@ -422,7 +423,7 @@ def contaminar_ruido_gaus(imagen, porcentaje, sigma):
         fila, col = seleccionadas[i][0], seleccionadas[i][1]
         arr_imagen[fila][col] += datos_gauss[i]
         
-    arr_imagen = np.clip(arr_imagen, 0, 255)
+    arr_imagen = np.clip(arr_imagen, 0, 255).astype(np.uint8)
 
     imagen_contaminada = Image.fromarray(arr_imagen)
 

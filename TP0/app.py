@@ -294,9 +294,16 @@ def ejecutar_contaminacion_gauss():
         messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
     
     porcentaje = simpledialog.askinteger('Porcentaje', 'Ingrese un porcentaje entre 0 y 100')
-    sigma = simpledialog.askinteger('Desviacion', 'Ingrese el valor de desviacion')
+    sigma = simpledialog.askinteger('SIGMA', 'Ingrese el valor de sigma')
 
     imagen_contamida = contaminar_ruido_gaus(imagen_original, porcentaje, sigma)
+
+    global tk_img_cont_gauss
+    tk_img_cont_gauss = ImageTk.PhotoImage(imagen_contamida)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_cont_gauss)
+
+    txt_herramientas.config(text=f'{porcentaje}% de la imagen contaminada con ruido Gussiano.')
     
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
@@ -324,6 +331,7 @@ menu_herramientas.add_separator()
 menu_herramientas.add_checkbutton(label='Recortar region', variable=modo_recorte, command=activar_modo_recorte)
 menu_herramientas.add_checkbutton(label='Analizar region', variable=modo_analisis, command=activar_modo_analisis)
 menu_herramientas.add_command(label='Generar Histograma', command=ejecutar_histograma)
+menu_herramientas.add_command(label='Contaminar con Gauss', command=ejecutar_contaminacion_gauss)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
