@@ -292,7 +292,8 @@ def ejecutar_contaminacion_gauss():
 
     if imagen_original is None:
         messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
-    
+        return
+        
     porcentaje = simpledialog.askinteger('Porcentaje', 'Ingrese un porcentaje entre 0 y 100')
     sigma = simpledialog.askinteger('SIGMA', 'Ingrese el valor de sigma')
 
@@ -312,6 +313,7 @@ def ejecutar_contaminacion_exp():
 
     if imagen_original is None:
         messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
+        return
 
     porcentaje = simpledialog.askinteger('Porcentaje', 'Ingrese un porcentaje entre 0 y 100')
     lamb = simpledialog.askfloat('lambda', 'Ingrese valor de lambda > 0.')
@@ -324,6 +326,26 @@ def ejecutar_contaminacion_exp():
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_imagen_cont_exp)
 
     txt_herramientas.configure(text=f'{porcentaje}% de la imagen contaminada con ruido exponencial.')
+
+
+def ejecutar_contaminacion_sal_pim():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Carga una imagen en escala de grises primero.')
+        return 
+    
+    p = simpledialog.askfloat('Densidad', 'Ingrese un valor de dencidad entre (0, 0.5).')
+
+    imagen_contaminada = contaminar_sal_pim(imagen_original, p)
+
+    global tk_img_s_p
+    tk_img_s_p = ImageTk.PhotoImage(imagen_contaminada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_s_p)
+
+    txt_herramientas.configure(text='Exito')
 
 
 barra_menu = tk.Menu(ventana)
@@ -354,6 +376,7 @@ menu_herramientas.add_checkbutton(label='Analizar region', variable=modo_analisi
 menu_herramientas.add_command(label='Generar Histograma', command=ejecutar_histograma)
 menu_herramientas.add_command(label='Contaminar con Gauss', command=ejecutar_contaminacion_gauss)
 menu_herramientas.add_command(label='Contaminar ruido exponencial', command=ejecutar_contaminacion_exp)
+menu_herramientas.add_command(label='Contaminar sal y pimienta', command=ejecutar_contaminacion_sal_pim)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))

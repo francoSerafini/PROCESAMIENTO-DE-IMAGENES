@@ -2,6 +2,7 @@ from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
 imagen_tk_original = None
 imagen_tk_modificada = None
@@ -454,6 +455,27 @@ def contaminar_ruido_exponencial(imagen, porcentaje, lambd):
     imagen_contaminada = Image.fromarray(arr_imagen)
 
     return imagen_contaminada
+
+
+def contaminar_sal_pim(imagen, p):
+
+    arr_imagen = np.array(imagen)
+    
+    for fila in range(arr_imagen.shape[0]):
+        for col in range(arr_imagen.shape[1]):
+            
+            x = np.random.random()
+            
+            if x <= p:
+                arr_imagen[fila][col] = 0
+            
+            elif x > 1-p:
+                arr_imagen[fila][col] = 255
+    
+    imagen_contaminada = Image.fromarray(arr_imagen)
+    return imagen_contaminada
+
+            
 
 
     
