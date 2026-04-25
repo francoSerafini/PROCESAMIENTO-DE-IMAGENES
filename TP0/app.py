@@ -297,10 +297,10 @@ def ejecutar_contaminacion_gauss():
     porcentaje = simpledialog.askinteger('Porcentaje', 'Ingrese un porcentaje entre 0 y 100')
     sigma = simpledialog.askinteger('SIGMA', 'Ingrese el valor de sigma')
 
-    imagen_contamida = contaminar_ruido_gaus(imagen_original, porcentaje, sigma)
+    imagen_modificada = contaminar_ruido_gaus(imagen_modificada, porcentaje, sigma)
 
     global tk_img_cont_gauss
-    tk_img_cont_gauss = ImageTk.PhotoImage(imagen_contamida)
+    tk_img_cont_gauss = ImageTk.PhotoImage(imagen_modificada)
     panel_modificado.delete('all')
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_cont_gauss)
 
@@ -318,10 +318,10 @@ def ejecutar_contaminacion_exp():
     porcentaje = simpledialog.askinteger('Porcentaje', 'Ingrese un porcentaje entre 0 y 100')
     lamb = simpledialog.askfloat('lambda', 'Ingrese valor de lambda > 0.')
 
-    imagen_contaminada = contaminar_ruido_exponencial(imagen_original, porcentaje, lamb)
+    imagen_modificada = contaminar_ruido_exponencial(imagen_original, porcentaje, lamb)
 
     global tk_imagen_cont_exp
-    tk_imagen_cont_exp = ImageTk.PhotoImage(imagen_contaminada)
+    tk_imagen_cont_exp = ImageTk.PhotoImage(imagen_modificada)
     panel_modificado.delete('all')
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_imagen_cont_exp)
 
@@ -338,14 +338,37 @@ def ejecutar_contaminacion_sal_pim():
     
     p = simpledialog.askfloat('Densidad', 'Ingrese un valor de dencidad entre (0, 0.5).')
 
-    imagen_contaminada = contaminar_sal_pim(imagen_original, p)
+    imagen_modificada = contaminar_sal_pim(imagen_original, p)
 
     global tk_img_s_p
-    tk_img_s_p = ImageTk.PhotoImage(imagen_contaminada)
+    tk_img_s_p = ImageTk.PhotoImage(imagen_modificada)
     panel_modificado.delete('all')
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_s_p)
 
-    txt_herramientas.configure(text='Exito')
+    txt_herramientas.configure(text='Imagen contaminada con sal y pimienta.')
+
+
+def ejecutar_filtro_media():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen (preferentemente contaminada).')
+        return
+    
+    tam_filtro = pedir_entero_inpar()
+   
+    imagen_modificada = aplicar_filtro_media(imagen_original, tam_filtro)
+
+    global tk_img_fil_media
+    tk_img_fil_media = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_media)
+    
+    panel_modificado.image = tk_img_fil_media
+
+    txt_herramientas.configure(text = f'Imagen filtrada con media.')
+
 
 
 barra_menu = tk.Menu(ventana)
@@ -377,6 +400,7 @@ menu_herramientas.add_command(label='Generar Histograma', command=ejecutar_histo
 menu_herramientas.add_command(label='Contaminar con Gauss', command=ejecutar_contaminacion_gauss)
 menu_herramientas.add_command(label='Contaminar ruido exponencial', command=ejecutar_contaminacion_exp)
 menu_herramientas.add_command(label='Contaminar sal y pimienta', command=ejecutar_contaminacion_sal_pim)
+menu_herramientas.add_command(label='Aplicar filtro media', command=ejecutar_filtro_media)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))

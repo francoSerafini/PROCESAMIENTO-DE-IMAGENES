@@ -475,6 +475,56 @@ def contaminar_sal_pim(imagen, p):
     imagen_contaminada = Image.fromarray(arr_imagen)
     return imagen_contaminada
 
+
+def tomar_valores_vecindad(matriz, radio, x, y):
+
+    valores = np.array([])
+
+    for filas in range((x-radio), (x+radio+1)):
+        for col in range((y-radio), (y+radio+1)):
+            
+            valores = np.append(valores, matriz[filas][col])
+
+    return valores
+
+
+def aplicar_filtro_media(imagen, tam_fil):
+
+    arr_img = np.array(imagen)
+    filas, col = arr_img.shape
+    img_filtrada = arr_img.copy()
+    radio = int((tam_fil - 1) / 2) #Mostrar como se calcula el radio
+    peso = 1  / (tam_fil**2)
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+            
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+            nuevo_valor = (vecindad * peso).sum()
+            img_filtrada[x][y] = int(nuevo_valor)
+    
+    imagen_limpia = Image.fromarray(img_filtrada)
+    return imagen_limpia
+
+
+def pedir_entero_inpar():
+
+    while True:
+        valor = simpledialog.askinteger('Tam. filtro', 'Ingrese un numero entero impar:')
+    
+        if valor is None:
+            return None
+
+        if valor % 2 != 0:
+            return valor
+        
+        else:
+            messagebox.showerror('Error', f'El numero {valor}, es par, ingrese un numero impar.')
+    
+
+
+        
+
             
 
 
