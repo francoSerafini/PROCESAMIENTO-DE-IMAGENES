@@ -364,10 +364,61 @@ def ejecutar_filtro_media():
     tk_img_fil_media = ImageTk.PhotoImage(imagen_modificada)
     panel_modificado.delete('all')
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_media)
-    
-    panel_modificado.image = tk_img_fil_media
 
-    txt_herramientas.configure(text = f'Imagen filtrada con media.')
+    txt_herramientas.configure(text = f'Imagen filtrada con media y pesos 1/{tam_filtro**2}.')
+
+
+def ejecutar_filtro_mediana():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen (preferentemente contaminada).')
+        return
+    
+    tam_filtro = pedir_entero_inpar()
+   
+    imagen_modificada = aplicar_filtro_mediana(imagen_original, tam_filtro)
+
+    global tk_img_fil_mediana
+    tk_img_fil_mediana = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_mediana)
+
+    txt_herramientas.configure(text = f'Imagen filtrada con mediana {tam_filtro}x{tam_filtro}')
+
+
+def ejecutar_filtro_mediana_ponderada():
+
+    global imagen_original, imagen_modificada
+
+    repeticiones = np.array([], dtype=int)
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen (preferentemente contaminada).')
+        return
+    
+    tam_filtro = pedir_entero_inpar()
+
+    for i in range(tam_filtro**2):
+        
+        valor = simpledialog.askinteger('Matriz de repeticiones', f'Ingrese el valor {i}')
+        
+        if valor is None:
+            return None
+        
+        repeticiones = np.append(repeticiones, valor)
+    
+    imagen_modificada = aplicar_filtro_mediana_ponderada(imagen_original, repeticiones)
+
+    global tk_img_fil_mediana_pond
+    tk_img_fil_mediana_pond = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_mediana_pond)
+
+    txt_herramientas.configure(text = f'Imagen filtrada con mediana ponderada {tam_filtro}x{tam_filtro}')   
+
+
 
 
 
@@ -396,11 +447,16 @@ menu_herramientas.add_command(label='Cambiar color pixel', command=activar_modo_
 menu_herramientas.add_separator()
 menu_herramientas.add_checkbutton(label='Recortar region', variable=modo_recorte, command=activar_modo_recorte)
 menu_herramientas.add_checkbutton(label='Analizar region', variable=modo_analisis, command=activar_modo_analisis)
+menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Generar Histograma', command=ejecutar_histograma)
+menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Contaminar con Gauss', command=ejecutar_contaminacion_gauss)
 menu_herramientas.add_command(label='Contaminar ruido exponencial', command=ejecutar_contaminacion_exp)
 menu_herramientas.add_command(label='Contaminar sal y pimienta', command=ejecutar_contaminacion_sal_pim)
+menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar filtro media', command=ejecutar_filtro_media)
+menu_herramientas.add_command(label='Aplicar filtro mediana', command=ejecutar_filtro_mediana)
+menu_herramientas.add_command(label='Aplicar filtro mediana_ponderada', command=ejecutar_filtro_mediana_ponderada)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))

@@ -488,25 +488,6 @@ def tomar_valores_vecindad(matriz, radio, x, y):
     return valores
 
 
-def aplicar_filtro_media(imagen, tam_fil):
-
-    arr_img = np.array(imagen)
-    filas, col = arr_img.shape
-    img_filtrada = arr_img.copy()
-    radio = int((tam_fil - 1) / 2) #Mostrar como se calcula el radio
-    peso = 1  / (tam_fil**2)
-
-    for x in range(radio, (filas - radio)):
-        for y in range(radio, (col - radio)):
-            
-            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
-            nuevo_valor = (vecindad * peso).sum()
-            img_filtrada[x][y] = int(nuevo_valor)
-    
-    imagen_limpia = Image.fromarray(img_filtrada)
-    return imagen_limpia
-
-
 def pedir_entero_inpar():
 
     while True:
@@ -520,12 +501,100 @@ def pedir_entero_inpar():
         
         else:
             messagebox.showerror('Error', f'El numero {valor}, es par, ingrese un numero impar.')
+
+
+def aplicar_filtro_media(imagen, tam_fil):
+
+    arr_img = np.array(imagen)
+    filas, col = arr_img.shape
+    img_filtrada = arr_img.copy()
+    radio = int((tam_fil - 1) / 2) #Mostrar como se calcula el radio
+    peso = 1  / (tam_fil**2)
+
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio filtrado de media ({tam_fil}x{tam_fil})...')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+            
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+            nuevo_valor = (vecindad * peso).sum()
+            img_filtrada[x][y] = int(nuevo_valor)
+        
+        contador_filas += 1
+        porcetaje = (contador_filas / total_filas) * 100
+        
+        print(f'\rProgreso: {porcetaje:.2f}%', end="")
+    
+    print('\nFiltrado completado.')
+    
+    return Image.fromarray(img_filtrada)
     
 
+def aplicar_filtro_mediana(imagen, tam_filtro):
 
-        
+    arr_imagen = np.array(imagen)
+    filas, col = arr_imagen.shape
+    img_filtrada = arr_imagen.copy()
+    radio = int((tam_filtro-1) / 2)
+    
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
 
-            
+    print(f'Inicio de filtrado mediana ({tam_filtro}x{tam_filtro})')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+
+            vecindad = tomar_valores_vecindad(arr_imagen, radio, x, y)
+            ind_valor_medio = len(vecindad) // 2
+            peso = np.sort(vecindad)[ind_valor_medio]
+            img_filtrada[x][y] = peso
+
+        contador_filas += 1
+        porcentaje = (contador_filas / total_filas) * 100
+
+        print(f'\rProgreso: {porcentaje:.2f}%', end="")
+
+    print('\nFiltrado completado.')
+
+    return(Image.fromarray(img_filtrada))
+
+
+def aplicar_filtro_mediana_ponderada(imagen, repeticiones):
+
+    arr_imagen = np.array(imagen)
+    filas, col = arr_imagen.shape
+    img_filtrada = arr_imagen.copy()
+    tam_lado = int(np.sqrt(len(repeticiones)))
+    radio = tam_lado // 2
+    
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio de filtrado mediana ponderada')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+
+            vecindad = tomar_valores_vecindad(arr_imagen, radio, x, y)
+            vecindad_rep = np.repeat(vecindad, repeticiones)
+            vecindad_ordenada = np.sort(vecindad_rep)
+            ind_valor_medio = len(vecindad_rep) // 2
+            img_filtrada[x][y] = vecindad_ordenada[ind_valor_medio]
+
+        contador_filas += 1
+        porcentaje = (contador_filas / total_filas) * 100
+
+        print(f'\rProgreso: {porcentaje:.2f}%', end="")
+
+    print('\nFiltrado completado.')
+
+    return(Image.fromarray(img_filtrada))
+
+
 
 
     
