@@ -647,7 +647,38 @@ def aplicar_fitro_gauss(imagen, desviacion):
     print('\nFiltrado completado.')
 
     return(Image.fromarray(img_filtrada))
+
+
+def aplicar_filtro_realce(imagen, tam_filtro):
+
+
+    arr_img = np.array(imagen)
+    filas, col = arr_img.shape
+    img_filtrada = arr_img.copy()
+    pesos = np.full((tam_filtro**2), -1)
+    ind_valor_medio = (tam_filtro**2) // 2
+    pesos[ind_valor_medio] = (tam_filtro**2) - 1
+    radio = int((tam_filtro - 1) / 2)
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio filtrado de realce ({tam_filtro}x{tam_filtro})...')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+            
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+            nuevo_valor = (vecindad * pesos).sum()
+            img_filtrada[x][y] = np.clip(nuevo_valor, 0, 255)
+        
+        contador_filas += 1
+        porcetaje = (contador_filas / total_filas) * 100
+        
+        print(f'\rProgreso: {porcetaje:.2f}%', end="")
     
+    print('\nFiltrado completado.')
+    
+    return Image.fromarray(img_filtrada)   
 
 
 

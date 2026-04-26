@@ -439,6 +439,26 @@ def ejecutar_filtro_gauss():
     txt_herramientas.configure(text = f'Imagen filtrada con mediana ponderada (Sigma={sigma})')
 
 
+def ejecutar_filtro_realce():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen (preferentemente contaminada).')
+        return
+    
+    tam_filtro = pedir_entero_inpar()
+   
+    imagen_modificada = aplicar_filtro_realce(imagen_original, tam_filtro)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Filtro de realce aplicado ({tam_filtro}x{tam_filtro}.')
+
+
 
 
 barra_menu = tk.Menu(ventana)
@@ -477,6 +497,7 @@ menu_herramientas.add_command(label='Aplicar filtro media', command=ejecutar_fil
 menu_herramientas.add_command(label='Aplicar filtro mediana', command=ejecutar_filtro_mediana)
 menu_herramientas.add_command(label='Aplicar filtro mediana ponderada', command=ejecutar_filtro_mediana_ponderada)
 menu_herramientas.add_command(label='Aplicar filtro Gaussiano', command=ejecutar_filtro_gauss)
+menu_herramientas.add_command(label='Aplicar filtro realce', command=ejecutar_filtro_realce)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
