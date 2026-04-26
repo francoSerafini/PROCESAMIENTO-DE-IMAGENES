@@ -488,6 +488,20 @@ def tomar_valores_vecindad(matriz, radio, x, y):
     return valores
 
 
+def tomar_valores_vecindad_y_coord(matriz, radio, x, y):
+
+    valores = np.array([])
+    coordenadas = []
+    
+    for i in range((x-radio), (x+radio+1)):
+        for j in range((y-radio), (y+radio+1)):
+            
+            valores = np.append(valores, matriz[i][j])
+            coordenadas.append((i-x, j-y))
+    
+    return valores, np.array(coordenadas)
+
+
 def pedir_entero_inpar():
 
     while True:
@@ -594,6 +608,46 @@ def aplicar_filtro_mediana_ponderada(imagen, repeticiones):
 
     return(Image.fromarray(img_filtrada))
 
+
+def aplicar_fitro_gauss(imagen, desviacion):
+
+    arr_imagen = np.array(imagen)
+    
+    k = round(2 * desviacion + 1)
+    if k % 2 == 0: k += 1
+
+    filas, col = arr_imagen.shape
+    img_filtrada = arr_imagen.copy()
+    radio = k // 2
+
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio de filtrado Gaussiano ({k}, Sigma={desviacion})')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+
+            vecindad, coordenadas = tomar_valores_vecindad_y_coord(arr_imagen, radio, x, y)
+           
+            exponentes = -(coordenadas[:, 0]**2 + coordenadas[:, 1]**2) / (2 * desviacion**2)
+            
+            pesos = (1 / (2 * np.pi * desviacion**2)) * np.exp(exponentes) 
+            pesos = pesos / np.sum(pesos)
+
+            nuevo_valor = np.sum(vecindad * pesos) 
+            
+            img_filtrada[x][y] = nuevo_valor           
+
+        contador_filas += 1
+        porcentaje = (contador_filas / total_filas) * 100
+
+        print(f'\rProgreso: {porcentaje:.2f}%', end="")
+
+    print('\nFiltrado completado.')
+
+    return(Image.fromarray(img_filtrada))
+    
 
 
 

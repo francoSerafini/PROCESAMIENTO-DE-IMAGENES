@@ -416,8 +416,27 @@ def ejecutar_filtro_mediana_ponderada():
     panel_modificado.delete('all')
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_mediana_pond)
 
-    txt_herramientas.configure(text = f'Imagen filtrada con mediana ponderada {tam_filtro}x{tam_filtro}')   
+    txt_herramientas.configure(text = f'Imagen filtrada con mediana ponderada {tam_filtro}x{tam_filtro}') 
 
+
+def ejecutar_filtro_gauss():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen (preferentemente contaminada).')
+        return
+    
+    sigma = simpledialog.askfloat('Sigma', 'Ingrese el valor de sigma.')
+
+    imagen_modificada = aplicar_fitro_gauss(imagen_original, sigma)
+
+    global tk_img_fil_sigma
+    tk_img_fil_sigma = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_sigma)
+
+    txt_herramientas.configure(text = f'Imagen filtrada con mediana ponderada (Sigma={sigma})')
 
 
 
@@ -456,7 +475,8 @@ menu_herramientas.add_command(label='Contaminar sal y pimienta', command=ejecuta
 menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar filtro media', command=ejecutar_filtro_media)
 menu_herramientas.add_command(label='Aplicar filtro mediana', command=ejecutar_filtro_mediana)
-menu_herramientas.add_command(label='Aplicar filtro mediana_ponderada', command=ejecutar_filtro_mediana_ponderada)
+menu_herramientas.add_command(label='Aplicar filtro mediana ponderada', command=ejecutar_filtro_mediana_ponderada)
+menu_herramientas.add_command(label='Aplicar filtro Gaussiano', command=ejecutar_filtro_gauss)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
