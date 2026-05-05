@@ -275,20 +275,12 @@ def funcion_gamma(imagen, gamma):
     
     arr_imagen = np.array(imagen)
 
-    if len(arr_imagen.shape) == 2:
-        for x in range(arr_imagen.shape[0]):
-            for y in range(arr_imagen.shape[1]):
-                
-                r = arr_imagen[x][y]
-                arr_imagen[x][y] = c*(r**gamma)
-    
-    else:
-        for x in range(arr_imagen.shape[0]):
-            for y in range(arr_imagen.shape[1]):
-                for canal in range(arr_imagen.shape[2]):
-                    rcanal = arr_imagen[x][y][canal]
-                    arr_imagen[x][y][canal] = c*(rcanal**gamma)
-    
+    for x in range(arr_imagen.shape[0]):
+        for y in range(arr_imagen.shape[1]):
+            
+            r = arr_imagen[x][y]
+            arr_imagen[x][y] = c*(r**gamma)
+        
     imagen_transformada = Image.fromarray(arr_imagen)
     return imagen_transformada
 
@@ -297,19 +289,11 @@ def aplicar_negativo(imagen):
 
     arr_imagen = np.array(imagen)
 
-    if len(arr_imagen.shape) == 2:
-        for x in range(arr_imagen.shape[0]):
-            for y in range(arr_imagen.shape[1]):
-                
-                arr_imagen[x][y] = 255 - arr_imagen[x][y]
-    
-    else:
-        for x in range(arr_imagen.shape[0]):
-            for y in range(arr_imagen.shape[1]):
-                for canal in range(arr_imagen.shape[2]):
-
-                    arr_imagen[x][y][canal] = 255 - arr_imagen[x][y][canal]
-    
+    for x in range(arr_imagen.shape[0]):
+        for y in range(arr_imagen.shape[1]):
+            
+            arr_imagen[x][y] = 255 - arr_imagen[x][y]
+        
     imagen_negativa = Image.fromarray(arr_imagen)
     return imagen_negativa
 
@@ -370,8 +354,8 @@ def aplicar_ecualizacion(imagen):
     for x in range(arr_imagen.shape[0]):
         for y in range(arr_imagen.shape[1]):
             
-            valor_actual = arr_imagen[x][y]
-            arr_imagen[x][y] = tabla[valor_actual]
+            nivel_gris = arr_imagen[x][y]
+            arr_imagen[x][y] = tabla[nivel_gris]
     
     return Image.fromarray(arr_imagen)
 
@@ -391,6 +375,7 @@ def generar_datos_gauss(mu, sigma, cant=10000, graficar_distribucion=False):
     
     return datos_gauss
 
+#generar_datos_gauss(0, 5, 10000, True)
 
 def generar_datos_exponecial(lambd, cant=10000, graficar_distribucion=False):
 
@@ -406,6 +391,8 @@ def generar_datos_exponecial(lambd, cant=10000, graficar_distribucion=False):
         plt.show()
 
     return datos_exp
+
+#generar_datos_exponecial(3, 10000, True)
 
 def contaminar_ruido_gaus(imagen, porcentaje, sigma):
 
@@ -488,20 +475,6 @@ def tomar_valores_vecindad(matriz, radio, x, y):
     return valores
 
 
-def tomar_valores_vecindad_y_coord(matriz, radio, x, y):
-
-    valores = np.array([])
-    coordenadas = []
-    
-    for i in range((x-radio), (x+radio+1)):
-        for j in range((y-radio), (y+radio+1)):
-            
-            valores = np.append(valores, matriz[i][j])
-            coordenadas.append((i-x, j-y))
-    
-    return valores, np.array(coordenadas)
-
-
 def pedir_entero_inpar():
 
     while True:
@@ -522,7 +495,7 @@ def aplicar_filtro_media(imagen, tam_fil):
     arr_img = np.array(imagen)
     filas, col = arr_img.shape
     img_filtrada = arr_img.copy()
-    radio = int((tam_fil - 1) / 2) #Mostrar como se calcula el radio
+    radio = int((tam_fil - 1) / 2)
     peso = 1  / (tam_fil**2)
 
     total_filas = (filas - radio) - radio
@@ -583,7 +556,7 @@ def aplicar_filtro_mediana_ponderada(imagen, repeticiones):
     filas, col = arr_imagen.shape
     img_filtrada = arr_imagen.copy()
     tam_lado = int(np.sqrt(len(repeticiones)))
-    radio = tam_lado // 2
+    radio = int((tam_lado-1) / 2)
     
     total_filas = (filas - radio) - radio
     contador_filas = 0
@@ -609,6 +582,20 @@ def aplicar_filtro_mediana_ponderada(imagen, repeticiones):
     return(Image.fromarray(img_filtrada))
 
 
+def tomar_valores_vecindad_y_coord(matriz, radio, x, y):
+
+    valores = np.array([])
+    coordenadas = []
+    
+    for i in range((x-radio), (x+radio+1)):
+        for j in range((y-radio), (y+radio+1)):
+            
+            valores = np.append(valores, matriz[i][j])
+            coordenadas.append((i-x, j-y))
+    
+    return valores, np.array(coordenadas)
+
+
 def aplicar_fitro_gauss(imagen, desviacion):
 
     arr_imagen = np.array(imagen)
@@ -618,7 +605,7 @@ def aplicar_fitro_gauss(imagen, desviacion):
 
     filas, col = arr_imagen.shape
     img_filtrada = arr_imagen.copy()
-    radio = k // 2
+    radio = int((k-1) / 2)
 
     total_filas = (filas - radio) - radio
     contador_filas = 0

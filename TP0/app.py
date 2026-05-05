@@ -179,7 +179,7 @@ def ejecutar_gamma():
         messagebox.showwarning('Aviso', 'Carga una imagen primero')
         return
 
-    valor_gamma = simpledialog.askfloat('Transformacion Gamma', 'Ingrse valor Gamma mayor que 0, menor que 2 y distinto de 1')
+    valor_gamma = simpledialog.askfloat('Transformacion Gamma', 'Ingrese valor Gamma mayor que 0, menor que 2 y distinto de 1')
 
     if valor_gamma is None: return
 
