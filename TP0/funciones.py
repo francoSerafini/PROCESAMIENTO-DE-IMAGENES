@@ -17,45 +17,60 @@ def cargar_raw(ruta, ancho, alto, profundidad='unit8'):
     return Image.fromarray(matriz)
 
 def cargar_imagen(panel_or, panel_mod):
-
     global imagen_original, imagen_tk_original
     
-
     ruta = filedialog.askopenfilename(
         title='Seleccionar imagen',
-        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.RAW')]
-        )
+        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.raw')]
+    )
     
-    extension, nombre = ruta.lower().split('.')[-1], ruta.lower().split('/')[-1]
+    if not ruta: return None, None
+
+    partes = ruta.split('.')
+    extension = partes[-1].lower()
+    nombre = ruta.split('/')[-1]
 
     if extension == 'raw':
-        ancho = simpledialog.askinteger('Configuracion RAW', f'Ancho img {nombre} (px):')
-        alto = simpledialog.askinteger('Configuracion RAW', f'Alto img {nombre} (px)')
+        ancho_raw = simpledialog.askinteger('Configuracion RAW', f'Ancho img {nombre} (px):')
+        alto_raw = simpledialog.askinteger('Configuracion RAW', f'Alto img {nombre} (px):')
 
-        if not ancho or not alto: return
+        if not ancho_raw or not alto_raw: return None, None
 
         with open(ruta, 'rb') as f:
             datos = np.fromfile(f, dtype=np.uint8)
-            matriz = datos.reshape((alto, ancho))
+            matriz = datos.reshape((alto_raw, ancho_raw))
             imagen_original = Image.fromarray(matriz)
-    
     else:
         imagen_original = Image.open(ruta)
     
-    imagen_modificada = imagen_original.copy()
 
+    max_ancho_pantalla = panel_or.winfo_toplevel().winfo_screenwidth() - 100
+    max_alto_pantalla = panel_or.winfo_toplevel().winfo_screenheight() - 200
+
+    max_ancho_por_panel = max_ancho_pantalla // 2
+
+    factor_ancho = max_ancho_por_panel / imagen_original.width
+    factor_alto = max_alto_pantalla / imagen_original.height
     
-    imagen_original = imagen_original.resize((960, 540))
-    imagen_modificada = imagen_modificada.resize((960, 540))
+    factor_escala = min(factor_ancho, factor_alto)
+
+    nuevo_ancho = int(imagen_original.width * factor_escala)
+    nuevo_alto = int(imagen_original.height * factor_escala)
+        
+    imagen_original = imagen_original.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
+
+    imagen_modificada = imagen_original.copy()
         
     imagen_tk_original = ImageTk.PhotoImage(imagen_original)
     imagen_tk_modificada = ImageTk.PhotoImage(imagen_modificada)
 
     panel_or.configure(width=imagen_original.width, height=imagen_original.height)
+    panel_or.delete('all') 
     panel_or.create_image(0, 0, anchor='nw', image=imagen_tk_original)
     panel_or.image = imagen_tk_original
 
     panel_mod.configure(width=imagen_modificada.width, height=imagen_modificada.height)
+    panel_mod.delete('all')
     panel_mod.create_image(0, 0, anchor='nw', image=imagen_tk_modificada)
     panel_mod.image = imagen_tk_modificada
 
@@ -301,8 +316,10 @@ def aplicar_negativo(imagen):
 def obtener_histograma(imagen):
 
     arr_imagen = np.array(imagen)
+    total_pixeles = arr_imagen.size
     cant_valores_unicos = np.unique(arr_imagen, return_counts=True)
-    frecuencias = dict(zip(cant_valores_unicos[0], cant_valores_unicos[1]))
+    frecuencias_relativas = cant_valores_unicos[1] / total_pixeles
+    frecuencias = dict(zip(cant_valores_unicos[0], frecuencias_relativas))
 
     return frecuencias
 
@@ -638,7 +655,6 @@ def aplicar_fitro_gauss(imagen, desviacion):
 
 def aplicar_filtro_realce(imagen, tam_filtro):
 
-
     arr_img = np.array(imagen)
     filas, col = arr_img.shape
     img_filtrada = arr_img.copy()
@@ -666,6 +682,75 @@ def aplicar_filtro_realce(imagen, tam_filtro):
     print('\nFiltrado completado.')
     
     return Image.fromarray(img_filtrada)   
+
+
+def aplicar_filtro_prewitt(imagen):
+
+    arr_img = np.array(imagen)
+    filas, col = arr_img.shape
+    img_filtrada = arr_img.copy()
+    pesos_ver = [-1, -1, -1, 0, 0, 0, 1, 1, 1]
+    pesos_hor = [-1, 0, 1, -1, 0, 1, -1, 0, 1]
+    radio = 1
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio filtrado de Prewitt')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+            
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+            nuevo_valor_ver = (vecindad * pesos_ver).sum()
+            nuevo_valor_hor = (vecindad * pesos_hor).sum()
+            valor_final = np.sqrt(nuevo_valor_ver**2 + nuevo_valor_hor**2)
+            img_filtrada[x][y] = np.clip(valor_final, 0, 255)
+        
+        contador_filas += 1
+        porcetaje = (contador_filas / total_filas) * 100
+        
+        print(f'\rProgreso: {porcetaje:.2f}%', end="")
+    
+    print('\nFiltrado completado.')
+    
+    return Image.fromarray(img_filtrada)   
+
+
+def aplicar_filtro_sobel(imagen):
+
+
+    arr_img = np.array(imagen)
+    filas, col = arr_img.shape
+    img_filtrada = arr_img.copy()
+    pesos_ver = [-1, -2, -1, 0, 0, 0, 1, 2, 1]
+    pesos_hor = [-1, 0, 1, -2, 0, 2, -1, 0, 1]
+    radio = 1
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio filtrado de Sobel')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+            
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+            nuevo_valor_ver = (vecindad * pesos_ver).sum()
+            nuevo_valor_hor = (vecindad * pesos_hor).sum()
+            valor_final = np.sqrt(nuevo_valor_ver**2 + nuevo_valor_hor**2)
+            img_filtrada[x][y] = np.clip(valor_final, 0, 255)
+        
+        contador_filas += 1
+        porcetaje = (contador_filas / total_filas) * 100
+        
+        print(f'\rProgreso: {porcetaje:.2f}%', end="")
+    
+    print('\nFiltrado completado.')
+    
+    return Image.fromarray(img_filtrada)
+
+
+
+
 
 
 

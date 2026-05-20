@@ -234,7 +234,7 @@ def ejecutar_histograma():
     plt.bar(valores, conteo, color='gray', width=1.0)
     plt.title('Histograma de la imagen original')
     plt.xlabel('Nivel de gris (0-255)')
-    plt.ylabel('Cantidad de pixeles')
+    plt.ylabel('Frecuencia relativa')
     plt.xlim([-5, 260])
     plt.grid(axis='y', alpha=0.3)
     plt.show()
@@ -459,6 +459,42 @@ def ejecutar_filtro_realce():
     txt_herramientas.configure(text = f'Filtro de realce aplicado ({tam_filtro}x{tam_filtro}.')
 
 
+def ejecutar_filtro_prewitt():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    imagen_modificada = aplicar_filtro_prewitt(imagen_original)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Filtro de Prewitt aplicado.')
+
+
+def ejecutar_filtro_sobel():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    imagen_modificada = aplicar_filtro_sobel(imagen_original)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Filtro de Sobel aplicado.')
+
+
 
 
 barra_menu = tk.Menu(ventana)
@@ -498,6 +534,8 @@ menu_herramientas.add_command(label='Aplicar filtro mediana', command=ejecutar_f
 menu_herramientas.add_command(label='Aplicar filtro mediana ponderada', command=ejecutar_filtro_mediana_ponderada)
 menu_herramientas.add_command(label='Aplicar filtro Gaussiano', command=ejecutar_filtro_gauss)
 menu_herramientas.add_command(label='Aplicar filtro realce', command=ejecutar_filtro_realce)
+menu_herramientas.add_command(label='Aplicar filtro de Prewitt', command=ejecutar_filtro_prewitt)
+menu_herramientas.add_command(label='Aplicar filtro de Sobel', command=ejecutar_filtro_sobel)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
