@@ -492,6 +492,11 @@ def tomar_valores_vecindad(matriz, radio, x, y):
     return valores
 
 
+def tomar_valores_vecindad_b(matriz, radio, x, y):
+
+    return matriz[x - radio : x + radio + 1, y - radio : y + radio + 1]
+
+
 def pedir_entero_inpar():
 
     while True:
@@ -687,7 +692,7 @@ def aplicar_filtro_realce(imagen, tam_filtro):
 def aplicar_filtro_prewitt(imagen):
 
     arr_img = np.array(imagen)
-    filas, col = arr_img.shape
+    filas, col = arr_img.shape[:2]
     img_filtrada = arr_img.copy()
     pesos_ver = [-1, -1, -1, 0, 0, 0, 1, 1, 1]
     pesos_hor = [-1, 0, 1, -1, 0, 1, -1, 0, 1]
@@ -700,11 +705,29 @@ def aplicar_filtro_prewitt(imagen):
     for x in range(radio, (filas - radio)):
         for y in range(radio, (col - radio)):
             
-            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
-            nuevo_valor_ver = (vecindad * pesos_ver).sum()
-            nuevo_valor_hor = (vecindad * pesos_hor).sum()
-            valor_final = np.sqrt(nuevo_valor_ver**2 + nuevo_valor_hor**2)
-            img_filtrada[x][y] = np.clip(valor_final, 0, 255)
+            vecindad = tomar_valores_vecindad_b(arr_img, radio, x, y)
+            
+            if len(arr_img.shape) == 3:
+                r = vecindad[:, :, 0] 
+                g = vecindad[:, :, 1]  
+                b = vecindad[:, :, 2]  
+                nuevo_valor_ver_r = (r.flatten() * pesos_ver).sum()
+                nuevo_valor_ver_g = (g.flatten() * pesos_ver).sum()
+                nuevo_valor_ver_b = (b.flatten() * pesos_ver).sum()
+                nuevo_valor_hor_r = (r.flatten() * pesos_hor).sum()
+                nuevo_valor_hor_g = (g.flatten() * pesos_hor).sum()
+                nuevo_valor_hor_b = (b.flatten() * pesos_hor).sum()
+                valor_final_r = (np.sqrt(nuevo_valor_ver_r**2 + nuevo_valor_hor_r**2))
+                valor_final_g = (np.sqrt(nuevo_valor_ver_g**2 + nuevo_valor_hor_g**2))
+                valor_final_b = (np.sqrt(nuevo_valor_ver_b**2 + nuevo_valor_hor_b**2))
+                valor_final = [np.clip(valor_final_r, 0, 255), np.clip(valor_final_g, 0, 255), np.clip(valor_final_b, 0, 255)]
+                img_filtrada[x][y] = valor_final
+            
+            else:
+                nuevo_valor_ver = (vecindad * pesos_ver).sum()
+                nuevo_valor_hor = (vecindad * pesos_hor).sum()
+                valor_final = np.sqrt(nuevo_valor_ver**2 + nuevo_valor_hor**2)
+                img_filtrada[x][y] = np.clip(valor_final, 0, 255)
         
         contador_filas += 1
         porcetaje = (contador_filas / total_filas) * 100
@@ -712,15 +735,14 @@ def aplicar_filtro_prewitt(imagen):
         print(f'\rProgreso: {porcetaje:.2f}%', end="")
     
     print('\nFiltrado completado.')
-    
+    print("Suma total de intensidades del mapa de bordes:", img_filtrada.sum())
     return Image.fromarray(img_filtrada)   
 
 
 def aplicar_filtro_sobel(imagen):
 
-
     arr_img = np.array(imagen)
-    filas, col = arr_img.shape
+    filas, col = arr_img.shape[:2]
     img_filtrada = arr_img.copy()
     pesos_ver = [-1, -2, -1, 0, 0, 0, 1, 2, 1]
     pesos_hor = [-1, 0, 1, -2, 0, 2, -1, 0, 1]
@@ -732,12 +754,31 @@ def aplicar_filtro_sobel(imagen):
 
     for x in range(radio, (filas - radio)):
         for y in range(radio, (col - radio)):
-            
-            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
-            nuevo_valor_ver = (vecindad * pesos_ver).sum()
-            nuevo_valor_hor = (vecindad * pesos_hor).sum()
-            valor_final = np.sqrt(nuevo_valor_ver**2 + nuevo_valor_hor**2)
-            img_filtrada[x][y] = np.clip(valor_final, 0, 255)
+
+            vecindad = tomar_valores_vecindad_b(arr_img, radio, x, y)
+
+            if len(arr_img.shape) == 3:
+                r = vecindad[:, :, 0]
+                g = vecindad[:, :, 1] 
+                b = vecindad[:, :, 2]  
+                nuevo_valor_ver_r = (r.flatten() * pesos_ver).sum()
+                nuevo_valor_ver_g = (g.flatten() * pesos_ver).sum()
+                nuevo_valor_ver_b = (b.flatten() * pesos_ver).sum()
+                nuevo_valor_hor_r = (r.flatten() * pesos_hor).sum()
+                nuevo_valor_hor_g = (g.flatten() * pesos_hor).sum()
+                nuevo_valor_hor_b = (b.flatten() * pesos_hor).sum()
+                valor_final_r = (np.sqrt(nuevo_valor_ver_r**2 + nuevo_valor_hor_r**2))
+                valor_final_g = (np.sqrt(nuevo_valor_ver_g**2 + nuevo_valor_hor_g**2))
+                valor_final_b = (np.sqrt(nuevo_valor_ver_b**2 + nuevo_valor_hor_b**2))
+                valor_final = [np.clip(valor_final_r, 0, 255), np.clip(valor_final_g, 0, 255), np.clip(valor_final_b, 0, 255)]
+                img_filtrada[x][y] = valor_final
+
+            else:        
+                vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+                nuevo_valor_ver = (vecindad * pesos_ver).sum()
+                nuevo_valor_hor = (vecindad * pesos_hor).sum()
+                valor_final = np.sqrt(nuevo_valor_ver**2 + nuevo_valor_hor**2)
+                img_filtrada[x][y] = np.clip(valor_final, 0, 255)
         
         contador_filas += 1
         porcetaje = (contador_filas / total_filas) * 100
@@ -749,6 +790,98 @@ def aplicar_filtro_sobel(imagen):
     return Image.fromarray(img_filtrada)
 
 
+def aplicar_metodo_laplaciano(imagen):
+
+    arr_img = np.array(imagen).astype(np.float64)
+    filas, col = arr_img.shape
+    img_filtrada = np.zeros_like(arr_img)
+    matriz = np.zeros_like(arr_img)
+    pesos = [0, -1, 0, -1, 4, -1, 0, -1, 0]
+    radio = 1
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio metodo Laplaciano')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+            nuevo_valor = (vecindad * pesos).sum()
+            matriz[x][y] = nuevo_valor
+        
+        contador_filas += 1
+        porcetaje = (contador_filas / total_filas) * 100
+        print(f'\rProgreso: {porcetaje:.2f}%', end="")
+    
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+
+            centro = matriz[x][y]
+            derecha = matriz[x][y+1]
+            abajo = matriz[x+1][y]
+
+            if centro * derecha <= 0 or centro * abajo <= 0:
+                img_filtrada[x][y] = 255
+            else:
+                img_filtrada[x][y] = 0
+    
+    print('\nFiltrado completado.')
+    
+    return Image.fromarray(img_filtrada.astype(np.uint8))
+
+
+def aplicar_metodo_laplaciano_pendiente(imagen, umbral):
+
+    arr_img = np.array(imagen).astype(np.float64)
+    filas, col = arr_img.shape
+    img_filtrada = np.zeros_like(arr_img)
+    matriz = np.zeros_like(arr_img)
+    pesos = [0, -1, 0, -1, 4, -1, 0, -1, 0]
+    radio = 1
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio metodo Laplaciano')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+            nuevo_valor = (vecindad * pesos).sum()
+            matriz[x][y] = nuevo_valor
+        
+        contador_filas += 1
+        porcetaje = (contador_filas / total_filas) * 100
+        print(f'\rProgreso: {porcetaje:.2f}%', end="")
+    
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+
+            centro = matriz[x][y]
+            derecha = matriz[x][y+1]
+            abajo = matriz[x+1][y]
+
+            es_borde = False
+
+            if centro * derecha <= 0:
+                pendiente_h = np.abs(centro - derecha)
+                if pendiente_h > umbral:
+                    es_borde = True
+
+            if not es_borde and (centro * abajo <= 0):
+                pendiente = np.abs(centro - abajo)
+                if pendiente > umbral:
+                    es_borde = True
+
+            if es_borde:
+                img_filtrada[x][y] = 255
+            else:
+                img_filtrada[x][y] = 0
+    
+    print('\nFiltrado completado.')
+    
+    return Image.fromarray(img_filtrada.astype(np.uint8))
 
 
 

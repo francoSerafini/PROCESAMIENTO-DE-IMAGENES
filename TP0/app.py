@@ -495,6 +495,42 @@ def ejecutar_filtro_sobel():
     txt_herramientas.configure(text = f'Filtro de Sobel aplicado.')
 
 
+def ejecutar_metodo_laplaciano():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    imagen_modificada = aplicar_metodo_laplaciano(imagen_original)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Metodo Laplaciano aplicado.')
+
+
+def ejecutar_metodo_laplaciano_pendiente():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+
+    umbral = simpledialog.askfloat('UMBRAL', 'Ingrese un valor de umbral.')
+    
+    imagen_modificada = aplicar_metodo_laplaciano_pendiente(imagen_original, umbral)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Metodo Laplaciano aplicado con umbral {umbral}.')
 
 
 barra_menu = tk.Menu(ventana)
@@ -536,6 +572,9 @@ menu_herramientas.add_command(label='Aplicar filtro Gaussiano', command=ejecutar
 menu_herramientas.add_command(label='Aplicar filtro realce', command=ejecutar_filtro_realce)
 menu_herramientas.add_command(label='Aplicar filtro de Prewitt', command=ejecutar_filtro_prewitt)
 menu_herramientas.add_command(label='Aplicar filtro de Sobel', command=ejecutar_filtro_sobel)
+menu_herramientas.add_command(label='Aplicar metodo Laplaciano', command=ejecutar_metodo_laplaciano)
+menu_herramientas.add_command(label='Aplicar metodo Laplaciano pendiente', command=ejecutar_metodo_laplaciano_pendiente)
+
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
