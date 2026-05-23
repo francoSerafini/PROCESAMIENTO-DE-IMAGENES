@@ -533,6 +533,25 @@ def ejecutar_metodo_laplaciano_pendiente():
     txt_herramientas.configure(text = f'Metodo Laplaciano aplicado con umbral {umbral}.')
 
 
+def ejecutar_metodo_laplaciano_gaussiano():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    sigma = simpledialog.askfloat('Sigma', 'Ingrese el valor de sigma.')
+
+    imagen_modificada = aplicar_metodo_laplaciano_gaussiano(imagen_original, sigma)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Metodo Laplaciano Gaussiano aplicado.')
+
+
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
 
@@ -574,6 +593,7 @@ menu_herramientas.add_command(label='Aplicar filtro de Prewitt', command=ejecuta
 menu_herramientas.add_command(label='Aplicar filtro de Sobel', command=ejecutar_filtro_sobel)
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano', command=ejecutar_metodo_laplaciano)
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano pendiente', command=ejecutar_metodo_laplaciano_pendiente)
+menu_herramientas.add_command(label='Aplicar metodo Laplaciano Gaussiano', command=ejecutar_metodo_laplaciano_gaussiano)
 
 
 

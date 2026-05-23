@@ -821,7 +821,7 @@ def aplicar_metodo_laplaciano(imagen):
             derecha = matriz[x][y+1]
             abajo = matriz[x+1][y]
 
-            if centro * derecha <= 0 or centro * abajo <= 0:
+            if (centro > 0 and derecha < 0) or (centro < 0 and derecha > 0) or (centro > 0 and abajo < 0) or (centro < 0 and abajo > 0) :
                 img_filtrada[x][y] = 255
             else:
                 img_filtrada[x][y] = 0
@@ -864,13 +864,13 @@ def aplicar_metodo_laplaciano_pendiente(imagen, umbral):
 
             es_borde = False
 
-            if centro * derecha <= 0:
-                pendiente_h = np.abs(centro - derecha)
+            if (centro > 0 and derecha < 0) or (centro < 0 and derecha > 0):
+                pendiente_h = abs(centro) + abs(derecha)
                 if pendiente_h > umbral:
                     es_borde = True
 
-            if not es_borde and (centro * abajo <= 0):
-                pendiente = np.abs(centro - abajo)
+            if not es_borde and (centro > 0 and abajo < 0) or (centro < 0 and abajo > 0):
+                pendiente = abs(centro) + abs(abajo)
                 if pendiente > umbral:
                     es_borde = True
 
@@ -884,8 +884,75 @@ def aplicar_metodo_laplaciano_pendiente(imagen, umbral):
     return Image.fromarray(img_filtrada.astype(np.uint8))
 
 
+def aplicar_metodo_laplaciano_gaussiano(imagen, desviacion):
 
+    arr_img = np.array(imagen).astype(np.float64)
 
+    k_gauss = round(4 * desviacion + 1)
+    if k_gauss % 2 == 0: k_gauss += 1
 
+    img_filtrada = np.zeros_like(arr_img)
+    img_suavizada = np.zeros_like(arr_img)
+    matriz = np.zeros_like(arr_img)
+    pesos_laplace = [0, -1, 0, -1, 4, -1, 0, -1, 0]
+
+    filas, col = arr_img.shape[:2]
+    radio_gauss = int((k_gauss-1) / 2)
+    radio_laplace = 1
     
     
+    total_filas_gauss = (filas - radio_gauss) - radio_gauss
+    total_filas_laplace = (filas - radio_laplace) - radio_laplace
+    contador_filas = 0
+
+    print(f'Inicio metodo Laplaciano del Gaussiano (Filtro Gaussiano de tamaño: {k_gauss}x{k_gauss})')
+
+    for x in range(radio_gauss, (filas - radio_gauss)):
+        for y in range(radio_gauss, (col - radio_gauss)):
+
+            vecindad, coordenadas = tomar_valores_vecindad_y_coord(arr_img, radio_gauss, x, y)
+           
+            exponentes = -(coordenadas[:, 0]**2 + coordenadas[:, 1]**2) / (2 * desviacion**2)
+            
+            pesos_gauss = (1 / (2 * np.pi * desviacion**2)) * np.exp(exponentes) 
+            pesos_gauss = pesos_gauss / np.sum(pesos_gauss)
+
+            nuevo_valor = np.sum(vecindad * pesos_gauss) 
+
+            img_suavizada[x][y] = nuevo_valor 
+        
+        contador_filas += 1
+        porcentaje_g = (contador_filas / total_filas_gauss) * 100
+        print(f'\rProgreso Gaussiano: {porcentaje_g:.2f}%', end="")
+    
+    print() 
+    contador_filas = 0
+    
+    for x in range(radio_laplace, (filas - radio_laplace)):
+        for y in range(radio_laplace, (col - radio_laplace)):
+
+            vecindad = tomar_valores_vecindad(img_suavizada, radio_laplace, x, y)
+            nuevo_valor = (vecindad * pesos_laplace).sum()
+            matriz[x][y] = nuevo_valor
+        
+        contador_filas += 1
+        porcetaje_l = (contador_filas / total_filas_laplace) * 100
+        print(f'\rProgreso Laplaciano: {porcetaje_l:.2f}%', end="")
+    
+
+    for x in range(radio_laplace, (filas - radio_laplace )):
+        for y in range(radio_laplace, (col - radio_laplace)):
+
+            centro = matriz[x][y]
+            derecha = matriz[x][y+1]
+            abajo = matriz[x+1][y]
+
+            if (centro > 0 and derecha < 0) or (centro < 0 and derecha > 0) or (centro > 0 and abajo < 0) or (centro < 0 and abajo > 0) :
+                img_filtrada[x][y] = 255
+            else:
+                img_filtrada[x][y] = 0
+    
+    print('\nFiltrado completado.')
+    
+    return Image.fromarray(img_filtrada.astype(np.uint8))
+
