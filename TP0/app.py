@@ -552,6 +552,49 @@ def ejecutar_metodo_laplaciano_gaussiano():
     txt_herramientas.configure(text = f'Metodo Laplaciano Gaussiano aplicado.')
 
 
+def ejecutar_difusion_isotropica():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    tiempo = simpledialog.askinteger('Tiempo', 'Ingrese un valor para tiempo')
+    lambd = simpledialog.askfloat('Lambda', 'Ingrese el valor de lambda.')
+
+    imagen_modificada = aplicar_difusion_isotropica(imagen_original, tiempo, lambd)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Difusion Isotropica aplicada.')
+
+
+def ejecutar_difusion_anisotropica():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    tiempo = simpledialog.askinteger('Tiempo', 'Ingrese un valor para tiempo')
+    lambd = simpledialog.askfloat('Lambda', 'Ingrese el valor de lambda.')
+    sigma = simpledialog.askfloat('Sigma', 'Ingrese el valor de sigma.')
+    lec = messagebox.askyesno("Elegir método", "¿Desea utilizar el método Detector de Leclerc?\n\n(De lo contrario, se usará Detector de Lorentz)")
+    
+    imagen_modificada = aplicar_difusion_anisotropica(imagen_original, tiempo, lambd, sigma, lec)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Difusion Anisotropica aplicada.')
+
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
 
@@ -594,6 +637,8 @@ menu_herramientas.add_command(label='Aplicar filtro de Sobel', command=ejecutar_
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano', command=ejecutar_metodo_laplaciano)
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano pendiente', command=ejecutar_metodo_laplaciano_pendiente)
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano Gaussiano', command=ejecutar_metodo_laplaciano_gaussiano)
+menu_herramientas.add_command(label='Aplicar Difusion Isotropica', command=ejecutar_difusion_isotropica)
+menu_herramientas.add_command(label='Aplicar Difusion Anisotropica', command=ejecutar_difusion_anisotropica)
 
 
 

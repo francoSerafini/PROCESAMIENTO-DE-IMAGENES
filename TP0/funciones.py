@@ -705,7 +705,7 @@ def aplicar_filtro_prewitt(imagen):
     for x in range(radio, (filas - radio)):
         for y in range(radio, (col - radio)):
             
-            vecindad = tomar_valores_vecindad_b(arr_img, radio, x, y)
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
             
             if len(arr_img.shape) == 3:
                 r = vecindad[:, :, 0] 
@@ -955,4 +955,117 @@ def aplicar_metodo_laplaciano_gaussiano(imagen, desviacion):
     print('\nFiltrado completado.')
     
     return Image.fromarray(img_filtrada.astype(np.uint8))
+
+
+def aplicar_difusion_isotropica(imagen, tiempo, lambd):
+
+    arr_img = np.array(imagen).astype(np.float64)
+    img_actutal = arr_img.copy()
+
+    filas, columnas = arr_img.shape
+
+    contador_pasos = 0
+    pasos = tiempo
+
+    print(f'Inicio difusion Isotropica')
+
+    for i in range(tiempo):
+
+        img_siguiente = img_actutal.copy()
+
+        for x in range(1, filas-1):
+            for y in range(1, columnas-1):
+
+                centro = img_actutal[x][y]
+                arriba = img_actutal[x-1][y]
+                abajo = img_actutal[x+1][y]
+                derecha = img_actutal[x][y+1]
+                izquierda = img_actutal[x][y-1]
+
+                dif_arriba = arriba - centro
+                dif_abajo = abajo - centro
+                dif_derecha = derecha - centro
+                dif_izquierda = izquierda - centro
+                
+                nuevo_valor = centro + ((dif_arriba + dif_abajo + dif_derecha + dif_izquierda) * lambd)
+
+                img_siguiente[x][y] = nuevo_valor
+    
+        contador_pasos += 1
+        porcentaje = (contador_pasos / pasos) * 100
+        print(f'\rProgreso: {porcentaje:.2f}%', end="")
+    
+        img_actutal = img_siguiente.copy()
+    
+    print('\nDifusion completada.')
+    
+    img_final = np.clip(img_actutal, 0, 255).astype(np.uint8)
+    
+    return(Image.fromarray(img_final))
+
+def lecrec(derivada, sigma):
+    return np.exp(-(derivada**2) / (sigma**2))
+
+def lorentz(derivada, sigma):
+    return 1 / ((derivada**2 / sigma**2) + 1)
+
+
+def aplicar_difusion_anisotropica(imagen, tiempo, lambd, sigma, lec = True):
+
+    arr_img = np.array(imagen).astype(np.float64)
+    img_actutal = arr_img.copy()
+
+    filas, columnas = arr_img.shape
+
+    contador_pasos = 0
+    pasos = tiempo
+
+    print(f'Inicio difusion Anisotropica')
+
+    for i in range(tiempo):
+
+        img_siguiente = img_actutal.copy()
+
+        for x in range(1, filas-1):
+            for y in range(1, columnas-1):
+
+                centro = img_actutal[x][y]
+                arriba = img_actutal[x-1][y]
+                abajo = img_actutal[x+1][y]
+                derecha = img_actutal[x][y+1]
+                izquierda = img_actutal[x][y-1]
+
+                dif_arriba = arriba - centro
+                dif_abajo = abajo - centro
+                dif_derecha = derecha - centro
+                dif_izquierda = izquierda - centro
+
+                if lec:
+                    c_arriba = lecrec(dif_arriba, sigma)
+                    c_abajo = lecrec(dif_abajo, sigma)
+                    c_derecha = lecrec(dif_derecha, sigma)
+                    c_izquierda = lecrec(dif_izquierda, sigma)
+
+                else:
+                    c_arriba = lorentz(dif_arriba, sigma)
+                    c_abajo = lorentz(dif_abajo, sigma)
+                    c_derecha = lorentz(dif_derecha, sigma)
+                    c_izquierda = lorentz(dif_izquierda, sigma)
+                    
+                nuevo_valor = centro + ((dif_arriba * c_arriba + dif_abajo * c_abajo + dif_derecha * c_derecha + dif_izquierda * c_izquierda) * lambd)
+
+                img_siguiente[x][y] = nuevo_valor
+    
+        contador_pasos += 1
+        porcentaje = (contador_pasos / pasos) * 100
+        print(f'\rProgreso: {porcentaje:.2f}%', end="")
+    
+        img_actutal = img_siguiente.copy()
+    
+    print('\nDifusion completada.')
+    
+    img_final = np.clip(img_actutal, 0, 255).astype(np.uint8)
+    
+    return(Image.fromarray(img_final))
+
 
