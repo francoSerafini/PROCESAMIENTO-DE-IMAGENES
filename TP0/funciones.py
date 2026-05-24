@@ -1068,4 +1068,84 @@ def aplicar_difusion_anisotropica(imagen, tiempo, lambd, sigma, lec = True):
     
     return(Image.fromarray(img_final))
 
+def aplicar_filtro_bilaterial(imagen, sigma_s, sigma_r):
 
+    arr_imagen = np.array(imagen).astype(np.float64)
+    
+    k = round(2 * sigma_s + 1)
+    if k % 2 == 0: k += 1
+
+    filas, col = arr_imagen.shape
+    img_filtrada = arr_imagen.copy()
+    radio = int((k-1) / 2)
+
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio de filtrado Bilaterial (tam_filtro: {k}x{k})')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+
+            vecindad, coordenadas = tomar_valores_vecindad_y_coord(arr_imagen, radio, x, y)
+            
+            distancias_cuadrado = coordenadas[:, 0]**2 + coordenadas[:, 1]**2            
+            pesos_esp = np.exp(-distancias_cuadrado / (2 * sigma_s**2))
+
+            centro = arr_imagen[x][y]
+            dif_color = vecindad - centro
+            pesos_color = np.exp(-(dif_color**2) / (2 * sigma_r**2))
+
+            pesos_totales = pesos_esp * pesos_color
+
+            suma_pixeles = np.sum(vecindad * pesos_totales)
+            suma_pesos = np.sum(pesos_totales)
+            
+            img_filtrada[x][y] = suma_pixeles / suma_pesos          
+
+        contador_filas += 1
+        porcentaje = (contador_filas / total_filas) * 100
+
+        print(f'\rProgreso: {porcentaje:.2f}%', end="")
+
+    print('\nFiltrado completado.')
+
+    img_final = np.clip(img_filtrada, 0, 255).astype(np.uint8)
+    
+    return(Image.fromarray(img_final))
+
+
+def aplicar_umbralizacion_iterativa(imagen, delta_t):
+
+    arr_img = np.array(imagen)
+
+    umbral = np.mean(imagen)
+
+    print('Inicio de Umbralizacion Iterativa')
+    iteracion = 0
+
+    while True:
+        iteracion += 1
+
+        g1 = arr_img[arr_img > umbral]
+        g2 = arr_img[arr_img <= umbral]
+    
+        m1 = 1/len(g1) * np.sum(g1)
+        m2 = 1/len(g2) * np.sum(g2)
+
+        umbral_nuevo = 0.5 * (m1 + m2)
+
+        if np.abs(umbral - umbral_nuevo) < delta_t:
+            umbral_final = umbral_nuevo
+            break
+        else:
+            umbral = umbral_nuevo
+        
+        print(f'Iteracion {iteracion}: Umbral = {umbral:.2f}')
+    
+    print(f'Fin de las iteraciones. Total de iteraciones: {iteracion}, Umbral Optimo: {umbral_final:.2f}')
+
+    imagen_binarizada = binarizar_imagen(imagen, umbral_final)
+    
+    return(imagen_binarizada)
+            

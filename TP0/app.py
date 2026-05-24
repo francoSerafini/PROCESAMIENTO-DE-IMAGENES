@@ -585,7 +585,7 @@ def ejecutar_difusion_anisotropica():
     lambd = simpledialog.askfloat('Lambda', 'Ingrese el valor de lambda.')
     sigma = simpledialog.askfloat('Sigma', 'Ingrese el valor de sigma.')
     lec = messagebox.askyesno("Elegir método", "¿Desea utilizar el método Detector de Leclerc?\n\n(De lo contrario, se usará Detector de Lorentz)")
-    
+
     imagen_modificada = aplicar_difusion_anisotropica(imagen_original, tiempo, lambd, sigma, lec)
 
     global tk_img_fil_realce
@@ -594,6 +594,50 @@ def ejecutar_difusion_anisotropica():
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
 
     txt_herramientas.configure(text = f'Difusion Anisotropica aplicada.')
+
+
+def ejecutar_filtro_bilateral():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    sigma_s = simpledialog.askfloat('Sigma Espacial', 'Ingrese el valor de Sigma Espacial.')
+    sigma_r = simpledialog.askfloat('Sigma Color', 'Ingrese el valor de Sigma Color.')
+
+    imagen_modificada = aplicar_filtro_bilaterial(imagen_original, sigma_s, sigma_r)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Difusion Anisotropica aplicada.')
+
+
+
+def ejecutar_umbralizacion_iterativa():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    delta_t = simpledialog.askfloat('Tolerancia', 'Ingrese un valor de tolerancia.')
+    
+    imagen_modificada = aplicar_umbralizacion_iterativa(imagen_original, delta_t)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Umbralizacion Iterativa aplicada.')
+
+
 
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
@@ -639,6 +683,8 @@ menu_herramientas.add_command(label='Aplicar metodo Laplaciano pendiente', comma
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano Gaussiano', command=ejecutar_metodo_laplaciano_gaussiano)
 menu_herramientas.add_command(label='Aplicar Difusion Isotropica', command=ejecutar_difusion_isotropica)
 menu_herramientas.add_command(label='Aplicar Difusion Anisotropica', command=ejecutar_difusion_anisotropica)
+menu_herramientas.add_command(label='Aplicar filtro Bilateral', command=ejecutar_filtro_bilateral)
+menu_herramientas.add_command(label='Aplicar Umbralizacion Iterativa', command=ejecutar_umbralizacion_iterativa)
 
 
 
