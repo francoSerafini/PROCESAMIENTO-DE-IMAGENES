@@ -1148,4 +1148,67 @@ def aplicar_umbralizacion_iterativa(imagen, delta_t):
     imagen_binarizada = binarizar_imagen(imagen, umbral_final)
     
     return(imagen_binarizada)
-            
+
+
+def aplicar_metodo_otzu(imagen):
+    
+    arr_img = np.array(imagen)
+
+    frecuencias = obtener_histograma(imagen)
+    p = np.zeros(256)
+    m = np.zeros(256)
+    p1 = np.zeros(256)
+
+    for intensidad, prob in frecuencias.items():
+        p[intensidad] = prob
+    
+    acumulador_m = 0.0
+    acumulador_p1 = 0.0
+
+    for t in range(256):
+
+        acumulador_p1 += p[t]
+        p1[t] = acumulador_p1
+
+        acumulador_m += t * p[t]
+        m[t] = acumulador_m
+    
+    mg = acumulador_m
+
+    var_clases = np.zeros(256)
+
+    for t in range(256):
+            if p1[t] > 0 and p1[t] < 1:
+                numerador = (mg * p1[t] - m[t]) ** 2
+                denominador = p1[t] * (1 - p1[t])
+                var_clases[t] = numerador / denominador
+            else:
+                var_clases[t] = 0.0
+
+    umbral_optimo = np.argmax(var_clases)
+
+    print(f"Método de Otsu completado. Umbral óptimo: {umbral_optimo}")
+
+    imagen_final = binarizar_imagen(imagen, umbral_optimo)
+
+    return imagen_final, umbral_optimo
+
+def segmentar_color(imagen):
+
+    arr_img = np.array(imagen)
+
+    r = arr_img[:, :, 0]
+    g = arr_img[:, :, 1]
+    b = arr_img[:, :, 2]
+
+    _, r_opt = aplicar_metodo_otzu(r)
+    _, g_opt = aplicar_metodo_otzu(g)
+    _, b_opt = aplicar_metodo_otzu(b)
+
+    r_seg = np.where(r > r_opt, 255, 0).astype(np.uint8)
+    g_seg = np.where(g > g_opt, 255, 0).astype(np.uint8)
+    b_seg = np.where(b > b_opt, 255, 0).astype(np.uint8)
+
+    arr_img_seg = np.stack([r_seg, g_seg, b_seg], axis=2)
+
+    return Image.fromarray(arr_img_seg)

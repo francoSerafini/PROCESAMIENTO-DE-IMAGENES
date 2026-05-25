@@ -628,7 +628,7 @@ def ejecutar_umbralizacion_iterativa():
     
     delta_t = simpledialog.askfloat('Tolerancia', 'Ingrese un valor de tolerancia.')
     
-    imagen_modificada = aplicar_umbralizacion_iterativa(imagen_original, delta_t)
+    imagen_modificada, _ = aplicar_umbralizacion_iterativa(imagen_original, delta_t)
 
     global tk_img_fil_realce
     tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
@@ -637,6 +637,41 @@ def ejecutar_umbralizacion_iterativa():
 
     txt_herramientas.configure(text = f'Umbralizacion Iterativa aplicada.')
 
+
+def ejecutar_metodo_otzu():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+        
+    imagen_modificada = aplicar_metodo_otzu(imagen_original)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Metodo de Otzu aplicado.')
+
+
+def ejecutar_seg_color():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen a color primero.')
+        return
+        
+    imagen_modificada = segmentar_color(imagen_original)
+
+    global tk_img_fil_realce
+    tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
+
+    txt_herramientas.configure(text = f'Segmentacion RGB aplicada.')
 
 
 barra_menu = tk.Menu(ventana)
@@ -685,6 +720,8 @@ menu_herramientas.add_command(label='Aplicar Difusion Isotropica', command=ejecu
 menu_herramientas.add_command(label='Aplicar Difusion Anisotropica', command=ejecutar_difusion_anisotropica)
 menu_herramientas.add_command(label='Aplicar filtro Bilateral', command=ejecutar_filtro_bilateral)
 menu_herramientas.add_command(label='Aplicar Umbralizacion Iterativa', command=ejecutar_umbralizacion_iterativa)
+menu_herramientas.add_command(label='Aplicar Umbralizacion Otzu', command=ejecutar_metodo_otzu)
+menu_herramientas.add_command(label='Aplicar Segmentacion RGB', command=ejecutar_seg_color)
 
 
 
