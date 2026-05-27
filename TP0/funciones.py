@@ -21,7 +21,7 @@ def cargar_imagen(panel_or, panel_mod):
     
     ruta = filedialog.askopenfilename(
         title='Seleccionar imagen',
-        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.raw')]
+        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.raw *xcf')]
     )
     
     if not ruta: return None, None
@@ -705,9 +705,8 @@ def aplicar_filtro_prewitt(imagen):
     for x in range(radio, (filas - radio)):
         for y in range(radio, (col - radio)):
             
-            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
-            
             if len(arr_img.shape) == 3:
+                vecindad = tomar_valores_vecindad_b(arr_img, radio, x, y)
                 r = vecindad[:, :, 0] 
                 g = vecindad[:, :, 1]  
                 b = vecindad[:, :, 2]  
@@ -724,6 +723,8 @@ def aplicar_filtro_prewitt(imagen):
                 img_filtrada[x][y] = valor_final
             
             else:
+                vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+
                 nuevo_valor_ver = (vecindad * pesos_ver).sum()
                 nuevo_valor_hor = (vecindad * pesos_hor).sum()
                 valor_final = np.sqrt(nuevo_valor_ver**2 + nuevo_valor_hor**2)
@@ -735,7 +736,6 @@ def aplicar_filtro_prewitt(imagen):
         print(f'\rProgreso: {porcetaje:.2f}%', end="")
     
     print('\nFiltrado completado.')
-    print("Suma total de intensidades del mapa de bordes:", img_filtrada.sum())
     return Image.fromarray(img_filtrada)   
 
 
@@ -791,170 +791,205 @@ def aplicar_filtro_sobel(imagen):
 
 
 def aplicar_metodo_laplaciano(imagen):
-
     arr_img = np.array(imagen).astype(np.float64)
     filas, col = arr_img.shape
     img_filtrada = np.zeros_like(arr_img)
     matriz = np.zeros_like(arr_img)
     pesos = [0, -1, 0, -1, 4, -1, 0, -1, 0]
     radio = 1
-    total_filas = (filas - radio) - radio
+    
+    total_filas = filas - 2 * radio
     contador_filas = 0
 
     print(f'Inicio metodo Laplaciano')
 
     for x in range(radio, (filas - radio)):
         for y in range(radio, (col - radio)):
-
             vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
             nuevo_valor = (vecindad * pesos).sum()
             matriz[x][y] = nuevo_valor
         
         contador_filas += 1
-        porcetaje = (contador_filas / total_filas) * 100
-        print(f'\rProgreso: {porcetaje:.2f}%', end="")
+        porcentaje = (contador_filas / total_filas) * 100
+        print(f'\rProgreso: {porcentaje:.2f}%', end="")
+    
+    print('\nBuscando cruces por cero...')
     
     for x in range(radio, (filas - radio)):
         for y in range(radio, (col - radio)):
 
-            centro = matriz[x][y]
-            derecha = matriz[x][y+1]
-            abajo = matriz[x+1][y]
+            pixel_actual = matriz[x][y]
+            cruce = False
 
-            if (centro > 0 and derecha < 0) or (centro < 0 and derecha > 0) or (centro > 0 and abajo < 0) or (centro < 0 and abajo > 0) :
-                img_filtrada[x][y] = 255
-            else:
-                img_filtrada[x][y] = 0
+            pixel_derecha = matriz[x][y+1] if (y + 1 < col) else 0
+
+            if (pixel_actual > 0 and pixel_derecha < 0) or (pixel_actual < 0 and pixel_derecha > 0):
+                cruce = True
+            elif pixel_actual == 0:
+                pixel_izquierda = matriz[x][y-1] if (y - 1 >= 0) else 0
+                if (pixel_izquierda > 0 and pixel_derecha < 0) or (pixel_izquierda < 0 and pixel_derecha > 0):
+                    cruce = True
+
+            if not cruce:
+                pixel_abajo = matriz[x+1][y] if (x + 1 < filas) else 0
+
+                if (pixel_actual > 0 and pixel_abajo < 0) or (pixel_actual < 0 and pixel_abajo > 0):
+                    cruce = True
+                elif pixel_actual == 0:
+                    pixel_arriba = matriz[x-1][y] if (x - 1 >= 0) else 0
+                    if (pixel_arriba > 0 and pixel_abajo < 0) or (pixel_arriba < 0 and pixel_abajo > 0):
+                        cruce = True
+
+            img_filtrada[x][y] = 255 if cruce else 0
     
-    print('\nFiltrado completado.')
-    
+    print('Filtrado completado.')
     return Image.fromarray(img_filtrada.astype(np.uint8))
 
 
 def aplicar_metodo_laplaciano_pendiente(imagen, umbral):
-
     arr_img = np.array(imagen).astype(np.float64)
     filas, col = arr_img.shape
     img_filtrada = np.zeros_like(arr_img)
     matriz = np.zeros_like(arr_img)
     pesos = [0, -1, 0, -1, 4, -1, 0, -1, 0]
     radio = 1
-    total_filas = (filas - radio) - radio
+    total_filas = filas - 2 * radio
     contador_filas = 0
 
     print(f'Inicio metodo Laplaciano')
 
     for x in range(radio, (filas - radio)):
         for y in range(radio, (col - radio)):
-
             vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
             nuevo_valor = (vecindad * pesos).sum()
             matriz[x][y] = nuevo_valor
         
         contador_filas += 1
-        porcetaje = (contador_filas / total_filas) * 100
-        print(f'\rProgreso: {porcetaje:.2f}%', end="")
+        porcentaje = (contador_filas / total_filas) * 100
+        print(f'\rProgreso: {porcentaje:.2f}%', end="")
     
+
     for x in range(radio, (filas - radio)):
         for y in range(radio, (col - radio)):
 
-            centro = matriz[x][y]
-            derecha = matriz[x][y+1]
-            abajo = matriz[x+1][y]
+            pixel_actual = matriz[x][y]
+            cruce = False
+            pendiente = 0.0
 
-            es_borde = False
+            pixel_derecha = matriz[x][y+1] if (y + 1 < col) else 0
 
-            if (centro > 0 and derecha < 0) or (centro < 0 and derecha > 0):
-                pendiente_h = abs(centro) + abs(derecha)
-                if pendiente_h > umbral:
-                    es_borde = True
+            if (pixel_actual > 0 and pixel_derecha < 0) or (pixel_actual < 0 and pixel_derecha > 0):
+                cruce = True
+                pendiente = abs(pixel_actual - pixel_derecha)
+            elif pixel_actual == 0:
+                pixel_izquierda = matriz[x][y-1] if (y - 1 >= 0) else 0
+                if (pixel_izquierda > 0 and pixel_derecha < 0) or (pixel_izquierda < 0 and pixel_derecha > 0):
+                    cruce = True
+                    pendiente = abs(pixel_izquierda - pixel_derecha) 
 
-            if not es_borde and (centro > 0 and abajo < 0) or (centro < 0 and abajo > 0):
-                pendiente = abs(centro) + abs(abajo)
-                if pendiente > umbral:
-                    es_borde = True
+            if not cruce:
+                pixel_abajo = matriz[x+1][y] if (x + 1 < filas) else 0
 
-            if es_borde:
+                if (pixel_actual > 0 and pixel_abajo < 0) or (pixel_actual < 0 and pixel_abajo > 0):
+                    cruce = True
+                    pendiente = abs(pixel_actual - pixel_abajo)
+                elif pixel_actual == 0:
+                    pixel_arriba = matriz[x-1][y] if (x - 1 >= 0) else 0
+                    if (pixel_arriba > 0 and pixel_abajo < 0) or (pixel_arriba < 0 and pixel_abajo > 0):
+                        cruce = True
+                        pendiente = abs(pixel_arriba - pixel_abajo)
+
+            if cruce and pendiente >= umbral:
                 img_filtrada[x][y] = 255
             else:
                 img_filtrada[x][y] = 0
     
-    print('\nFiltrado completado.')
-    
+    print('Filtrado completado.')
     return Image.fromarray(img_filtrada.astype(np.uint8))
 
 
-def aplicar_metodo_laplaciano_gaussiano(imagen, desviacion):
+def aplicar_metodo_laplaciano_gaussiano(imagen, desviacion, umbral):
 
     arr_img = np.array(imagen).astype(np.float64)
 
-    k_gauss = round(4 * desviacion + 1)
-    if k_gauss % 2 == 0: k_gauss += 1
+    k= round(4 * desviacion + 1)
+    if k % 2 == 0: k += 1
 
-    img_filtrada = np.zeros_like(arr_img)
-    img_suavizada = np.zeros_like(arr_img)
     matriz = np.zeros_like(arr_img)
-    pesos_laplace = [0, -1, 0, -1, 4, -1, 0, -1, 0]
+    img_filtrada = np.zeros_like(arr_img, dtype=np.uint8)
+
 
     filas, col = arr_img.shape[:2]
-    radio_gauss = int((k_gauss-1) / 2)
-    radio_laplace = 1
+    radio = int((k-1) / 2)
     
-    
-    total_filas_gauss = (filas - radio_gauss) - radio_gauss
-    total_filas_laplace = (filas - radio_laplace) - radio_laplace
+    total_filas = (filas - radio) - radio
+
     contador_filas = 0
 
-    print(f'Inicio metodo Laplaciano del Gaussiano (Filtro Gaussiano de tamaño: {k_gauss}x{k_gauss})')
+    print(f'Inicio metodo Laplaciano del Gaussiano (Filtro de tamaño: {k}x{k})')
 
-    for x in range(radio_gauss, (filas - radio_gauss)):
-        for y in range(radio_gauss, (col - radio_gauss)):
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
 
-            vecindad, coordenadas = tomar_valores_vecindad_y_coord(arr_img, radio_gauss, x, y)
+            vecindad, coordenadas = tomar_valores_vecindad_y_coord(arr_img, radio, x, y)
            
-            exponentes = -(coordenadas[:, 0]**2 + coordenadas[:, 1]**2) / (2 * desviacion**2)
+            distancia_cuadrada = coordenadas[:, 0]**2 + coordenadas[:, 1]**2
+
+            exponencial = np.exp(-distancia_cuadrada / (2 * desviacion**2))
             
-            pesos_gauss = (1 / (2 * np.pi * desviacion**2)) * np.exp(exponentes) 
-            pesos_gauss = pesos_gauss / np.sum(pesos_gauss)
+            parentesis_laplace = (distancia_cuadrada / (desviacion**2)) - 2
 
-            nuevo_valor = np.sum(vecindad * pesos_gauss) 
+            constante = 1 / (2 * np.pi * (desviacion**3))
 
-            img_suavizada[x][y] = nuevo_valor 
-        
-        contador_filas += 1
-        porcentaje_g = (contador_filas / total_filas_gauss) * 100
-        print(f'\rProgreso Gaussiano: {porcentaje_g:.2f}%', end="")
-    
-    print() 
-    contador_filas = 0
-    
-    for x in range(radio_laplace, (filas - radio_laplace)):
-        for y in range(radio_laplace, (col - radio_laplace)):
+            pesos = constante * exponencial * parentesis_laplace
 
-            vecindad = tomar_valores_vecindad(img_suavizada, radio_laplace, x, y)
-            nuevo_valor = (vecindad * pesos_laplace).sum()
+            nuevo_valor = np.sum(vecindad * pesos)
+
             matriz[x][y] = nuevo_valor
         
         contador_filas += 1
-        porcetaje_l = (contador_filas / total_filas_laplace) * 100
-        print(f'\rProgreso Laplaciano: {porcetaje_l:.2f}%', end="")
-    
+        porcentaje_g = (contador_filas / total_filas) * 100
+        print(f'\rProgreso: {porcentaje_g:.2f}%', end="")
 
-    for x in range(radio_laplace, (filas - radio_laplace )):
-        for y in range(radio_laplace, (col - radio_laplace)):
 
-            centro = matriz[x][y]
-            derecha = matriz[x][y+1]
-            abajo = matriz[x+1][y]
+    for x in range(radio, (filas - radio)):
+            for y in range(radio, (col - radio)):
 
-            if (centro > 0 and derecha < 0) or (centro < 0 and derecha > 0) or (centro > 0 and abajo < 0) or (centro < 0 and abajo > 0) :
-                img_filtrada[x][y] = 255
-            else:
-                img_filtrada[x][y] = 0
-    
-    print('\nFiltrado completado.')
-    
-    return Image.fromarray(img_filtrada.astype(np.uint8))
+                pixel_actual = matriz[x][y]
+                cruce = False
+                pendiente = 0.0
+
+                pixel_derecha = matriz[x][y+1] if (y + 1 < col) else 0
+
+                if (pixel_actual > 0 and pixel_derecha < 0) or (pixel_actual < 0 and pixel_derecha > 0):
+                    cruce = True
+                    pendiente = abs(pixel_actual - pixel_derecha)
+                elif pixel_actual == 0:
+                    pixel_izquierda = matriz[x][y-1] if (y - 1 >= 0) else 0
+                    if (pixel_izquierda > 0 and pixel_derecha < 0) or (pixel_izquierda < 0 and pixel_derecha > 0):
+                        cruce = True
+                        pendiente = abs(pixel_izquierda - pixel_derecha) 
+
+                if not cruce:
+                    pixel_abajo = matriz[x+1][y] if (x + 1 < filas) else 0
+
+                    if (pixel_actual > 0 and pixel_abajo < 0) or (pixel_actual < 0 and pixel_abajo > 0):
+                        cruce = True
+                        pendiente = abs(pixel_actual - pixel_abajo)
+                    elif pixel_actual == 0:
+                        pixel_arriba = matriz[x-1][y] if (x - 1 >= 0) else 0
+                        if (pixel_arriba > 0 and pixel_abajo < 0) or (pixel_arriba < 0 and pixel_abajo > 0):
+                            cruce = True
+                            pendiente = abs(pixel_arriba - pixel_abajo)
+
+                if cruce and pendiente >= umbral:
+                    img_filtrada[x][y] = 255
+                else:
+                    img_filtrada[x][y] = 0
+        
+    print('Filtrado completado.')
+    return Image.fromarray(img_filtrada)
+
 
 
 def aplicar_difusion_isotropica(imagen, tiempo, lambd):
@@ -1002,6 +1037,8 @@ def aplicar_difusion_isotropica(imagen, tiempo, lambd):
     img_final = np.clip(img_actutal, 0, 255).astype(np.uint8)
     
     return(Image.fromarray(img_final))
+
+
 
 def lecrec(derivada, sigma):
     return np.exp(-(derivada**2) / (sigma**2))
@@ -1068,6 +1105,7 @@ def aplicar_difusion_anisotropica(imagen, tiempo, lambd, sigma, lec = True):
     
     return(Image.fromarray(img_final))
 
+
 def aplicar_filtro_bilaterial(imagen, sigma_s, sigma_r):
 
     arr_imagen = np.array(imagen).astype(np.float64)
@@ -1102,7 +1140,7 @@ def aplicar_filtro_bilaterial(imagen, sigma_s, sigma_r):
             suma_pesos = np.sum(pesos_totales)
             
             img_filtrada[x][y] = suma_pixeles / suma_pesos          
-
+            
         contador_filas += 1
         porcentaje = (contador_filas / total_filas) * 100
 
@@ -1155,8 +1193,8 @@ def aplicar_metodo_otzu(imagen):
     arr_img = np.array(imagen)
 
     frecuencias = obtener_histograma(imagen)
-    p = np.zeros(256)
-    m = np.zeros(256)
+    p = np.zeros(256) 
+    m = np.zeros(256) 
     p1 = np.zeros(256)
 
     for intensidad, prob in frecuencias.items():

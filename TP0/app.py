@@ -541,8 +541,10 @@ def ejecutar_metodo_laplaciano_gaussiano():
         messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
         return
     sigma = simpledialog.askfloat('Sigma', 'Ingrese el valor de sigma.')
+    umbral = simpledialog.askfloat('UMBRAL', 'Ingrese un valor de umbral.')
 
-    imagen_modificada = aplicar_metodo_laplaciano_gaussiano(imagen_original, sigma)
+
+    imagen_modificada = aplicar_metodo_laplaciano_gaussiano(imagen_original, sigma, umbral)
 
     global tk_img_fil_realce
     tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
@@ -614,7 +616,7 @@ def ejecutar_filtro_bilateral():
     panel_modificado.delete('all')
     panel_modificado.create_image(0, 0, anchor='nw', image=tk_img_fil_realce)
 
-    txt_herramientas.configure(text = f'Difusion Anisotropica aplicada.')
+    txt_herramientas.configure(text = f'Filtro Bilateral aplicado. Sigma s = {sigma_s}, Sigma r = {sigma_r}')
 
 
 
@@ -628,7 +630,7 @@ def ejecutar_umbralizacion_iterativa():
     
     delta_t = simpledialog.askfloat('Tolerancia', 'Ingrese un valor de tolerancia.')
     
-    imagen_modificada, _ = aplicar_umbralizacion_iterativa(imagen_original, delta_t)
+    imagen_modificada = aplicar_umbralizacion_iterativa(imagen_original, delta_t)
 
     global tk_img_fil_realce
     tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
@@ -646,7 +648,7 @@ def ejecutar_metodo_otzu():
         messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
         return
         
-    imagen_modificada = aplicar_metodo_otzu(imagen_original)
+    imagen_modificada, _ = aplicar_metodo_otzu(imagen_original)
 
     global tk_img_fil_realce
     tk_img_fil_realce = ImageTk.PhotoImage(imagen_modificada)
@@ -711,14 +713,19 @@ menu_herramientas.add_command(label='Aplicar filtro mediana', command=ejecutar_f
 menu_herramientas.add_command(label='Aplicar filtro mediana ponderada', command=ejecutar_filtro_mediana_ponderada)
 menu_herramientas.add_command(label='Aplicar filtro Gaussiano', command=ejecutar_filtro_gauss)
 menu_herramientas.add_command(label='Aplicar filtro realce', command=ejecutar_filtro_realce)
+menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar filtro de Prewitt', command=ejecutar_filtro_prewitt)
 menu_herramientas.add_command(label='Aplicar filtro de Sobel', command=ejecutar_filtro_sobel)
+menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano', command=ejecutar_metodo_laplaciano)
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano pendiente', command=ejecutar_metodo_laplaciano_pendiente)
 menu_herramientas.add_command(label='Aplicar metodo Laplaciano Gaussiano', command=ejecutar_metodo_laplaciano_gaussiano)
+menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar Difusion Isotropica', command=ejecutar_difusion_isotropica)
 menu_herramientas.add_command(label='Aplicar Difusion Anisotropica', command=ejecutar_difusion_anisotropica)
+menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar filtro Bilateral', command=ejecutar_filtro_bilateral)
+menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar Umbralizacion Iterativa', command=ejecutar_umbralizacion_iterativa)
 menu_herramientas.add_command(label='Aplicar Umbralizacion Otzu', command=ejecutar_metodo_otzu)
 menu_herramientas.add_command(label='Aplicar Segmentacion RGB', command=ejecutar_seg_color)
