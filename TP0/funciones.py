@@ -16,12 +16,13 @@ def cargar_raw(ruta, ancho, alto, profundidad='unit8'):
     matriz = datos.reshape((alto, ancho))
     return Image.fromarray(matriz)
 
+
 def cargar_imagen(panel_or, panel_mod):
     global imagen_original, imagen_tk_original
     
     ruta = filedialog.askopenfilename(
         title='Seleccionar imagen',
-        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.raw *xcf')]
+        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.RAW *xcf')]
     )
     
     if not ruta: return None, None
@@ -43,21 +44,31 @@ def cargar_imagen(panel_or, panel_mod):
     else:
         imagen_original = Image.open(ruta)
     
-
+    # Límites máximos basados en la pantalla
     max_ancho_pantalla = panel_or.winfo_toplevel().winfo_screenwidth() - 100
     max_alto_pantalla = panel_or.winfo_toplevel().winfo_screenheight() - 200
-
     max_ancho_por_panel = max_ancho_pantalla // 2
 
-    factor_ancho = max_ancho_por_panel / imagen_original.width
-    factor_alto = max_alto_pantalla / imagen_original.height
-    
-    factor_escala = min(factor_ancho, factor_alto)
+    # =========================================================================
+    # NUEVA LÓGICA DE ESCALADO CONDICIONAL
+    # =========================================================================
+    # Solo calculamos la escala si la imagen desborda el panel horizontal o verticalmente
+    if imagen_original.width > max_ancho_por_panel or imagen_original.height > max_alto_pantalla:
+        factor_ancho = max_ancho_por_panel / imagen_original.width
+        factor_alto = max_alto_pantalla / imagen_original.height
+        factor_escala = min(factor_ancho, factor_alto)
+    else:
+        # Si es más chica que los límites, no se toca (escala 1:1)
+        factor_escala = 1.0
 
+    # Si el factor es 1.0, el tamaño final va a ser el mismo que el original
     nuevo_ancho = int(imagen_original.width * factor_escala)
     nuevo_alto = int(imagen_original.height * factor_escala)
         
-    imagen_original = imagen_original.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
+    # Solo llamamos a resize si realmente cambió el tamaño (factor_escala < 1.0)
+    if factor_escala < 1.0:
+        imagen_original = imagen_original.resize((nuevo_ancho, nuevo_alto), Image.Resampling.LANCZOS)
+    # =========================================================================
 
     imagen_modificada = imagen_original.copy()
         
@@ -790,6 +801,40 @@ def aplicar_filtro_sobel(imagen):
     return Image.fromarray(img_filtrada)
 
 
+def obtener_matrices_sobel(imagen):
+
+    arr_img = np.array(imagen).astype(np.float64)
+    filas, col = arr_img.shape[:2]
+    matriz_ver = np.zeros_like(arr_img)
+    matriz_hor = np.zeros_like(arr_img)
+    pesos_ver = [-1, -2, -1, 0, 0, 0, 1, 2, 1]
+    pesos_hor = [-1, 0, 1, -2, 0, 2, -1, 0, 1]
+    radio = 1
+    total_filas = (filas - radio) - radio
+    contador_filas = 0
+
+    print(f'Inicio filtrado de Sobel')
+
+    for x in range(radio, (filas - radio)):
+        for y in range(radio, (col - radio)):
+            
+            vecindad = tomar_valores_vecindad(arr_img, radio, x, y)
+            nuevo_valor_ver = (vecindad * pesos_ver).sum()
+            nuevo_valor_hor = (vecindad * pesos_hor).sum()
+            matriz_ver[x][y] = nuevo_valor_ver
+            matriz_hor[x][y] = nuevo_valor_hor
+        
+        contador_filas += 1
+        porcetaje = (contador_filas / total_filas) * 100
+        
+        print(f'\rProgreso: {porcetaje:.2f}%', end="")
+    
+    print('\nFiltrado completado.')
+    
+    return matriz_ver, matriz_hor
+
+
+
 def aplicar_metodo_laplaciano(imagen):
     arr_img = np.array(imagen).astype(np.float64)
     filas, col = arr_img.shape
@@ -989,6 +1034,7 @@ def aplicar_metodo_laplaciano_gaussiano(imagen, desviacion, umbral):
         
     print('Filtrado completado.')
     return Image.fromarray(img_filtrada)
+
 
 
 
@@ -1250,3 +1296,103 @@ def segmentar_color(imagen):
     arr_img_seg = np.stack([r_seg, g_seg, b_seg], axis=2)
 
     return Image.fromarray(arr_img_seg)
+
+
+def aplicar_detector_canny(imagen, desviacion_gauss, t1, t2):
+
+    arr_img = np.array(imagen)
+    filas, col = arr_img.shape[:2]  
+
+    imagen_filtrada = np.array(aplicar_fitro_gauss(imagen, desviacion_gauss))
+
+    matriz_ver, matriz_hor = obtener_matrices_sobel(imagen_filtrada)
+
+    matriz_angulos = np.zeros((filas, col), dtype=np.float64)
+    matriz_sobel = np.zeros((filas, col), dtype=np.float64)
+    matriz_resultado = np.zeros((filas, col), dtype=np.float64)
+    
+    matriz_final = np.zeros((filas, col), dtype=np.uint8)
+
+    
+    for x in range(1, (filas-1)):
+        for y in range(1, (col-1)):
+
+            I_x = matriz_hor[x][y]
+            I_y = matriz_ver[x][y]
+
+            if I_x != 0:
+                angulo_radianes = np.atan(I_y / I_x)
+                angulo = np.degrees(angulo_radianes) + 90
+            else:
+                angulo = np.degrees(np.pi/2) + 90
+        
+            if (angulo >= 0 and angulo <= 22.5) or (angulo >= 157.5 and angulo <= 180):
+                angulo = 0
+            elif (angulo >= 22.5 and angulo <= 67.5):
+                angulo = 45
+            elif (angulo >= 67.5 and angulo <= 112.5):
+                angulo = 90
+            else:
+                angulo = 135
+            
+            matriz_angulos[x][y] = angulo
+            matriz_sobel[x][y] = np.sqrt(I_x**2 + I_y**2)
+    
+    for x in range(1, (filas-1)):
+        for y in range(1, (col-1)):
+
+            angulo = matriz_angulos[x][y]
+
+            if angulo == 0:
+                vecino_1 = matriz_sobel[x][y-1]
+                vecino_2 = matriz_sobel[x][y+1]
+            elif angulo == 45:
+                vecino_1 = matriz_sobel[x+1][y-1]
+                vecino_2 = matriz_sobel[x-1][y+1]
+            elif angulo == 90:
+                vecino_1 = matriz_sobel[x-1][y]
+                vecino_2 = matriz_sobel[x+1][y]
+            else:
+                vecino_1 = matriz_sobel[x-1][y-1]
+                vecino_2 = matriz_sobel[x+1][y+1]
+            
+            centro = matriz_sobel[x][y]
+            
+            if centro >= vecino_1 and centro >= vecino_2:
+                matriz_resultado[x][y] = centro
+            else:
+                matriz_resultado[x][y] = 0
+            
+            if matriz_resultado[x][y] >= t2:
+                matriz_final[x][y] = 255
+            elif matriz_resultado[x][y] < t1:
+                matriz_final[x][y] = 0
+            else:
+                matriz_final[x][y] = 1
+
+    for x in range(1, (filas-1)):
+        for y in range(1, (col-1)):
+
+            if matriz_final[x][y] == 255:
+                
+                if matriz_final[x-1][y-1] == 1: matriz_final[x-1][y-1] = 255
+                if matriz_final[x-1][y] == 1: matriz_final[x-1][y] = 255
+                if matriz_final[x-1][y+1] == 1: matriz_final[x-1][y+1] = 255
+                if matriz_final[x][y-1] == 1: matriz_final[x][y-1] = 255
+                if matriz_final[x][y+1] == 1: matriz_final[x][y+1] = 255
+                if matriz_final[x+1][y-1] == 1: matriz_final[x+1][y-1] = 255
+                if matriz_final[x+1][y] == 1: matriz_final[x+1][y] = 255
+                if matriz_final[x+1][y+1] == 1: matriz_final[x+1][y+1] = 255
+    #for x in range(1, (filas-1)):
+    #     for y in range(1, (col-1)):
+
+    #         if matriz_final[x][y] == 255:
+                
+    #             if matriz_final[x-1][y] == 1: matriz_final[x-1][y] = 255
+    #             if matriz_final[x][y-1] == 1: matriz_final[x][y-1] = 255
+    #             if matriz_final[x][y+1] == 1: matriz_final[x][y+1] = 255
+    #             if matriz_final[x+1][y] == 1: matriz_final[x+1][y] = 255
+
+    print('Fin detector de Canny')
+
+    return Image.fromarray(matriz_final)

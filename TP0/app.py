@@ -676,6 +676,32 @@ def ejecutar_seg_color():
     txt_herramientas.configure(text = f'Segmentacion RGB aplicada.')
 
 
+def ejecutar_detector_canny():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    t1 = simpledialog.askinteger('Umbral 1', 'Ingrese un valor de umbral t1')
+    t2 = simpledialog.askinteger('Umbral 2', 'Ingrese un valor de umbral t2')
+    while t2 <= t1:
+        t2 = simpledialog.askinteger('Error', f'El umbral 2 debe ser mayor que {t1}. Ingrese nuevamente:')
+    
+    sigma = simpledialog.askinteger('Sigma Gauss', 'Ingrese el valor de Sigma.')
+        
+    imagen_modificada = aplicar_detector_canny(imagen_original, sigma, t1, t2)
+
+    global img
+    img = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=img)
+
+    txt_herramientas.configure(text = f'Detector de Canny aplicado con umbrales t1 = {t1} y t2 = {t2}.')
+
+
+
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
 
@@ -729,6 +755,8 @@ menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar Umbralizacion Iterativa', command=ejecutar_umbralizacion_iterativa)
 menu_herramientas.add_command(label='Aplicar Umbralizacion Otzu', command=ejecutar_metodo_otzu)
 menu_herramientas.add_command(label='Aplicar Segmentacion RGB', command=ejecutar_seg_color)
+menu_herramientas.add_separator()
+menu_herramientas.add_command(label='Aplicar detector de Canny', command=ejecutar_detector_canny)
 
 
 
