@@ -22,7 +22,7 @@ def cargar_imagen(panel_or, panel_mod):
     
     ruta = filedialog.askopenfilename(
         title='Seleccionar imagen',
-        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.RAW *xcf')]
+        filetypes=[('Archivos de imagen', '*.jpg *.jpeg *.png *.RAW *xcf *.PGM')]
     )
     
     if not ruta: return None, None
@@ -1321,11 +1321,10 @@ def aplicar_detector_canny(imagen, desviacion_gauss, t1, t2):
             I_y = matriz_ver[x][y]
 
             if I_x != 0:
-                angulo_radianes = np.atan(I_y / I_x)
+                angulo_radianes = np.arctan2(I_y , I_x)
                 angulo = np.degrees(angulo_radianes) + 90
             else:
-                angulo = np.degrees(np.pi/2) + 90
-        
+                angulo = np.degrees(np.pi/2) + 90        
             if (angulo >= 0 and angulo <= 22.5) or (angulo >= 157.5 and angulo <= 180):
                 angulo = 0
             elif (angulo >= 22.5 and angulo <= 67.5):
@@ -1396,3 +1395,64 @@ def aplicar_detector_canny(imagen, desviacion_gauss, t1, t2):
     print('Fin detector de Canny')
 
     return Image.fromarray(matriz_final)
+
+
+def aplicar_susan(imagen, umbral):
+
+    arr_imagen = np.array(imagen).astype(np.float64)
+    fil, col = arr_imagen.shape[:2]
+    
+    filtro = np.array([
+        [0, 0, 1, 1, 1, 0, 0],  
+        [0, 1, 1, 1, 1, 1, 0],  
+        [1, 1, 1, 1, 1, 1, 1],  
+        [1, 1, 1, 1, 1, 1, 1],  
+        [1, 1, 1, 1, 1, 1, 1],  
+        [0, 1, 1, 1, 1, 1, 0],  
+        [0, 0, 1, 1, 1, 0, 0]  
+    ])
+
+    salida = np.array(imagen.convert('RGB'))
+
+    for x in range(3, (fil-3)):
+        for y in range(3, (col-3)):
+
+            int_nucleo = arr_imagen[x][y]
+            n = 0
+
+            
+            for f_f, i in enumerate(range(-3, 4)):
+                for c_f, j in enumerate(range(-3, 4)):
+
+                    if filtro[f_f][c_f] == 1:
+                        
+                        dif = np.abs(arr_imagen[x+i][y+j] - int_nucleo)
+
+                        if dif < umbral:
+                             n += 1
+            
+            s = 1 - (n/37)
+
+            if 0.4 <= s < 0.65:
+                salida[x][y] = [255, 0, 0]
+            elif s > 0.65:
+                salida[x][y] = [0, 0, 255]
+    
+    print('Fin detector SUSAN')
+    return Image.fromarray(salida)
+
+
+        
+    
+
+    
+    
+    
+
+
+                     
+
+
+
+
+

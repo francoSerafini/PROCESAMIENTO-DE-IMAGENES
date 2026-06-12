@@ -701,6 +701,27 @@ def ejecutar_detector_canny():
     txt_herramientas.configure(text = f'Detector de Canny aplicado con umbrales t1 = {t1} y t2 = {t2}.')
 
 
+def ejecutar_detector_susan():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+    
+    t = simpledialog.askinteger('Umbral', 'Ingrese un valor de umbral')
+           
+    imagen_modificada = aplicar_susan(imagen_original, t)
+
+    global img
+    img = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=img)
+
+    txt_herramientas.configure(text = f'Detector de Susan aplicado con umbrales t = {t}.')
+
+
+
 
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
@@ -757,6 +778,7 @@ menu_herramientas.add_command(label='Aplicar Umbralizacion Otzu', command=ejecut
 menu_herramientas.add_command(label='Aplicar Segmentacion RGB', command=ejecutar_seg_color)
 menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar detector de Canny', command=ejecutar_detector_canny)
+menu_herramientas.add_command(label='Aplicar detector de Susan', command=ejecutar_detector_susan)
 
 
 
