@@ -1444,6 +1444,34 @@ def aplicar_susan(imagen, umbral):
     return Image.fromarray(salida)
 
 
+def pintar_rectas(imagen, coordenadas, diagonal):
+    filas, columnas = np.array(imagen).shape[:2]
+    angulos_grados = np.arange(-90, 91, 1)
+    imagen_rectas = np.array(imagen.convert('RGB'))
+
+    for i, j in coordenadas:
+        angulo = angulos_grados[j]
+        r_r = i - diagonal
+
+        theta_rad = np.radians(angulo)
+        seno = np.sin(theta_rad)
+        coseno = np.cos(theta_rad)
+
+        if seno > 0.001 or seno < -0.001:
+            for y_img in range(columnas):
+                x_img = int(round((r_r - y_img * coseno) / seno))
+                if 0 <= x_img < filas:
+                    imagen_rectas[x_img][y_img] = [255, 0, 0]
+        else:
+            y_img = int(round(r_r / coseno))
+            if 0 <= y_img < columnas:
+                for x_img in range(filas):
+                    imagen_rectas[x_img][y_img] = [255, 0, 0]
+
+    return Image.fromarray(imagen_rectas)
+
+
+
 def aplicar_transformada_hough(imagen, umbral):
 
     #arr_img = np.array(aplicar_detector_canny(imagen, sigma, t1, t2)).astype(np.float64)
@@ -1481,41 +1509,165 @@ def aplicar_transformada_hough(imagen, umbral):
 
             if votos > umbral:
                 coordenadas.append((i, j))
+
+        
+    return pintar_rectas(imagen, coordenadas, diagonal)
+
+
+
+def aplicar_segmentacion(imagen, area, iteraciones):
+
+    arr_img = np.array(imagen.convert('L')).astype(np.float64)
+    filas, columnas = arr_img.shape
+
+    matriz_inicial = np.full_like(arr_img, 3)
+
+    lin = set()
+    lout = set()
+
+    x_min, y_min, x_max, y_max = area
+
+    for x in range(y_min, y_max):
+        for y in range(x_min, x_max):
+
+            if x == y_min or x == y_max - 1 or y == x_min or y == x_max - 1:
+
+                lin.add((x, y))
+                matriz_inicial[x][y] = -1
+            
+            else: 
+                matriz_inicial[x][y] = -3
     
-    angulos_grados = np.arange(-90, 91, 1)
+    for x, y in list(lin):
 
-    imagen_rectas = np.array(imagen.convert('RGB'))
-
-
-    for i, j in coordenadas:
-
-        angulo = angulos_grados[j]
-
-        r_r = i - diagonal
-
-        theta_rad = np.radians(angulo)
-        seno = np.sin(theta_rad)
-        coseno = np.cos(theta_rad)
-
-        if seno > 0.001 or seno < -0.001:
-
-            for y_img in range(columnas):
-
-                x_img = int(round((r_r - y_img * coseno) / seno))
-
-                if 0 <= x_img < filas:
-                    imagen_rectas[x_img][y_img] = [255, 0, 0]
+        if x - 1 >= 0 and matriz_inicial[x-1][y] == 3:
+            lout.add((x-1, y))
+            matriz_inicial[x-1][y] == 1
+        if y - 1 >= 0 and matriz_inicial[x][y-1] == 3:
+            lout.add((x, y-1))
+            matriz_inicial[x][y-1] = 1
+        if y + 1 < columnas and matriz_inicial[x][y+1] == 3:
+            lout.add((x, y+1))
+            matriz_inicial[x][y+1] = 1
+        if x + 1 < filas and matriz_inicial[x+1][y] == 3:
+            lout.add((x+1, y))
+            matriz_inicial[x+1][y] = 1
         
-        else:
+    for iteracion in range(iteraciones):
 
-            y_img = int(round(r_r / coseno))
-            if 0 <= y_img < columnas:
-                for x_img in range(filas):
-                    imagen_rectas[x_img][y_img] = [255, 0, 0]
-        
-    return Image.fromarray(imagen_rectas)
+        mascara_objeto = matriz_inicial < 0
+        mascara_fondo = matriz_inicial > 0
 
+        theta1 = np.mean(arr_img[mascara_objeto])
+        theta0 = np.mean(arr_img[mascara_fondo])
+
+        puntos_a_mover_1 = []
+        for x, y in lout:
+            val_pixel = arr_img[x][y]
+            fd = np.log(np.abs(theta1 - val_pixel) / np.abs(theta0 - val_pixel))
+            if fd > 0:
+                puntos_a_mover_1.append((x, y))
         
+        for x, y in puntos_a_mover_1:
+            lout.remove((x, y))
+            lin.add((x, y))
+            matriz_inicial[x][y] = -1
+
+            if x - 1 >= 0 and matriz_inicial[x-1][y] == 3:
+                lout.add((x-1, y))
+                matriz_inicial[x-1][y] = 1
+            if y - 1 >= 0 and matriz_inicial[x][y-1] == 3:
+                lout.add((x, y-1))
+                matriz_inicial[x][y-1] = 1
+            if y + 1 < columnas and matriz_inicial[x][y+1] == 3:
+                lout.add((x, y+1))
+                matriz_inicial[x][y+1] = 1
+            if x + 1 < filas and matriz_inicial[x+1][y] == 3:
+                lout.add((x+1, y))
+                matriz_inicial[x+1][y] = 1
+        
+        puntos_limpieza_lin = []
+
+        for x, y in lin:
+
+            tiene_vecino_fondo = False
+
+            if x - 1 >= 0 and matriz_inicial[x-1][y] > 0: tiene_vecino_fondo = True
+            if y - 1 >= 0 and matriz_inicial[x][y-1] > 0: tiene_vecino_fondo = True
+            if y + 1 < columnas and matriz_inicial[x][y+1] > 0: tiene_vecino_fondo = True
+            if x + 1 < filas and matriz_inicial[x+1][y] > 0: tiene_vecino_fondo = True
+
+            if not tiene_vecino_fondo:
+                puntos_limpieza_lin.append((x, y))
+
+        for x, y in puntos_limpieza_lin:
+            lin.remove((x, y))
+            matriz_inicial[x][y] = -3
+
+        puntos_a_mover_2 = []
+
+        for x, y in lin:
+            val_pixel = arr_img[x][y]
+            fd = np.log((np.abs(theta1 - val_pixel) / (np.abs(theta0 - val_pixel))))
+            if fd < 0:
+                puntos_a_mover_2.append((x, y))
+
+        for x, y in puntos_a_mover_2:
+            lin.remove((x, y))
+            lout.add((x, y))
+            matriz_inicial[x][y] = 1
+
+            if x - 1 >= 0 and matriz_inicial[x-1][y] == -3:
+                lin.add((x-1, y))
+                matriz_inicial[x-1][y] = -1
+            if y - 1 >= 0 and matriz_inicial[x][y-1] == -3:
+                lin.add((x, y-1))
+                matriz_inicial[x][y-1] = -1
+            if y + 1 < columnas and matriz_inicial[x][y+1] == -3:
+                lin.add((x, y+1))
+                matriz_inicial[x][y+1] = -1
+            if x + 1 < filas and matriz_inicial[x+1][y] == -3:
+                lin.add((x+1, y))
+                matriz_inicial[x+1][y] = -1
+    
+        puntos_limpieza_lout = []
+        for x, y in lout:
+            tiene_vecino_objeto = False
+            if x - 1 >= 0 and matriz_inicial[x-1][y] < 0: tiene_vecino_objeto = True
+            if y - 1 >= 0 and matriz_inicial[x][y-1] < 0: tiene_vecino_objeto = True
+            if y + 1 < columnas and matriz_inicial[x][y+1] < 0: tiene_vecino_objeto = True
+            if x + 1 < filas and matriz_inicial[x+1][y] < 0: tiene_vecino_objeto = True
+            
+            if not tiene_vecino_objeto:
+                puntos_limpieza_lout.append((x, y))
+                
+        for x, y in puntos_limpieza_lout:
+            lout.remove((x, y))
+            matriz_inicial[x][y] = 3
+
+        # --- Condición de Parada por Estabilidad ---
+        estable = True
+        for x, y in lout:
+            val_pixel = arr_img[x, y]
+            fd = np.log((np.abs(theta1 - val_pixel)) / (np.abs(theta0 - val_pixel)))
+            if fd >= 0: estable = False; break
+        if estable:
+            for x, y in lin:
+                val_pixel = arr_img[x, y]
+                fd = np.log(np.abs(theta1 - val_pixel)) / (np.abs(theta0 - val_pixel))
+                if fd <= 0: estable = False; break
+        if estable:
+            break
+
+    salida_rgb = np.array(imagen.convert('RGB'))
+    
+    for x in range(filas):
+        for y in range(columnas):
+            if matriz_inicial[x][y] == 1 or matriz_inicial[x][y] == -1:
+                salida_rgb[x][y] = [255, 0, 0]
+
+    return Image.fromarray(salida_rgb)
+                    
     
 
 
