@@ -1392,9 +1392,11 @@ def aplicar_detector_canny(imagen, desviacion_gauss, t1, t2):
     #             if matriz_final[x][y+1] == 1: matriz_final[x][y+1] = 255
     #             if matriz_final[x+1][y] == 1: matriz_final[x+1][y] = 255
 
+    matriz_final[matriz_final == 1] = 0
     print('Fin detector de Canny')
 
     return Image.fromarray(matriz_final)
+
 
 
 def aplicar_susan(imagen, umbral):
@@ -1440,6 +1442,86 @@ def aplicar_susan(imagen, umbral):
     
     print('Fin detector SUSAN')
     return Image.fromarray(salida)
+
+
+def aplicar_transformada_hough(imagen, umbral):
+
+    #arr_img = np.array(aplicar_detector_canny(imagen, sigma, t1, t2)).astype(np.float64)
+    img_sobel = aplicar_filtro_sobel(imagen)
+    img_binaria = aplicar_metodo_otzu(img_sobel)[0]
+    arr_img = np.array(img_binaria).astype(np.float64)
+
+    theta = np.radians(np.arange(-90, 91, 1))
+
+    filas, columnas = arr_img.shape
+
+    diagonal= int(np.round(np.sqrt(filas**2 + columnas**2)))
+
+    rho = np.arange(-diagonal, diagonal)
+
+    matriz_acum = np.zeros((len(rho), len(theta)))
+
+    for x in range(filas):
+        for y in range(columnas):
+
+            if arr_img[x][y] == 255:
+
+                for j in range(len(theta)):
+                    r = (y * np.cos(theta[j])) + (x * np.sin(theta[j]))
+                    i = int(round(r)) + diagonal
+                    matriz_acum[i][j] += 1
+    
+    coordenadas = []
+    filas_acum, col_acum = matriz_acum.shape
+
+    for i in range(filas_acum):
+        for j in range(col_acum):
+
+            votos = matriz_acum[i][j]
+
+            if votos > umbral:
+                coordenadas.append((i, j))
+    
+    angulos_grados = np.arange(-90, 91, 1)
+
+    imagen_rectas = np.array(imagen.convert('RGB'))
+
+
+    for i, j in coordenadas:
+
+        angulo = angulos_grados[j]
+
+        r_r = i - diagonal
+
+        theta_rad = np.radians(angulo)
+        seno = np.sin(theta_rad)
+        coseno = np.cos(theta_rad)
+
+        if seno > 0.001 or seno < -0.001:
+
+            for y_img in range(columnas):
+
+                x_img = int(round((r_r - y_img * coseno) / seno))
+
+                if 0 <= x_img < filas:
+                    imagen_rectas[x_img][y_img] = [255, 0, 0]
+        
+        else:
+
+            y_img = int(round(r_r / coseno))
+            if 0 <= y_img < columnas:
+                for x_img in range(filas):
+                    imagen_rectas[x_img][y_img] = [255, 0, 0]
+        
+    return Image.fromarray(imagen_rectas)
+
+        
+    
+
+
+
+
+
 
 
         

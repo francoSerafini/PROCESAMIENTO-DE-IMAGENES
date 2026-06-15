@@ -721,6 +721,25 @@ def ejecutar_detector_susan():
     txt_herramientas.configure(text = f'Detector de Susan aplicado con umbrales t = {t}.')
 
 
+def ejecutar_transformada_hough():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+
+    umbral = simpledialog.askinteger('Umbral', 'Ingrese un valor de umbral')
+
+    imagen_modificada = aplicar_transformada_hough(imagen_original, umbral)
+
+    global img
+    img = ImageTk.PhotoImage(imagen_modificada)
+    panel_modificado.delete('all')
+    panel_modificado.create_image(0, 0, anchor='nw', image=img)
+
+    txt_herramientas.configure(text = f'Transformada de Hough aplicada.')
+
 
 
 barra_menu = tk.Menu(ventana)
@@ -779,6 +798,7 @@ menu_herramientas.add_command(label='Aplicar Segmentacion RGB', command=ejecutar
 menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar detector de Canny', command=ejecutar_detector_canny)
 menu_herramientas.add_command(label='Aplicar detector de Susan', command=ejecutar_detector_susan)
+menu_herramientas.add_command(label='Aplicar transformada de Hough', command=ejecutar_transformada_hough)
 
 
 
