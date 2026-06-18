@@ -2,7 +2,10 @@ from tkinter import filedialog, messagebox, simpledialog
 from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
 import numpy as np
-import random
+import os
+import glob
+import re
+
 
 imagen_tk_original = None
 imagen_tk_modificada = None
@@ -293,6 +296,8 @@ def analizar_region(imagen, area, lbl_info):
                      f'Promedio gris: {promedio_gris}')
     
     lbl_info.configure(text=resultado)
+
+    return
 
 
 def funcion_gamma(imagen, gamma):
@@ -1298,6 +1303,8 @@ def segmentar_color(imagen):
     return Image.fromarray(arr_img_seg)
 
 
+# -------------------------------------------TP4----------------------------------------------------------
+
 def aplicar_detector_canny(imagen, desviacion_gauss, t1, t2):
 
     arr_img = np.array(imagen)
@@ -1313,7 +1320,6 @@ def aplicar_detector_canny(imagen, desviacion_gauss, t1, t2):
     
     matriz_final = np.zeros((filas, col), dtype=np.uint8)
 
-    
     for x in range(1, (filas-1)):
         for y in range(1, (col-1)):
 
@@ -1515,48 +1521,52 @@ def aplicar_transformada_hough(imagen, umbral):
 
 
 
-def aplicar_segmentacion(imagen, area, iteraciones):
+def aplicar_segmentacion(imagen, iteraciones, area=None, anterior=None):
 
     arr_img = np.array(imagen.convert('L')).astype(np.float64)
     filas, columnas = arr_img.shape
 
-    matriz_inicial = np.full_like(arr_img, 3)
-
-    lin = set()
-    lout = set()
-
-    x_min, y_min, x_max, y_max = area
-
-    for x in range(y_min, y_max):
-        for y in range(x_min, x_max):
-
-            if x == y_min or x == y_max - 1 or y == x_min or y == x_max - 1:
-
-                lin.add((x, y))
-                matriz_inicial[x][y] = -1
-            
-            else: 
-                matriz_inicial[x][y] = -3
+    if anterior is not None:
+        fi, lin, lout = anterior
     
-    for x, y in list(lin):
+    else:
 
-        if x - 1 >= 0 and matriz_inicial[x-1][y] == 3:
-            lout.add((x-1, y))
-            matriz_inicial[x-1][y] == 1
-        if y - 1 >= 0 and matriz_inicial[x][y-1] == 3:
-            lout.add((x, y-1))
-            matriz_inicial[x][y-1] = 1
-        if y + 1 < columnas and matriz_inicial[x][y+1] == 3:
-            lout.add((x, y+1))
-            matriz_inicial[x][y+1] = 1
-        if x + 1 < filas and matriz_inicial[x+1][y] == 3:
-            lout.add((x+1, y))
-            matriz_inicial[x+1][y] = 1
+        fi = np.full_like(arr_img, 3)
+        lin = set()
+        lout = set()
+    
+        x_min, y_min, x_max, y_max = area
+
+        for x in range(y_min, y_max):
+            for y in range(x_min, x_max):
+
+                if x == y_min or x == y_max - 1 or y == x_min or y == x_max - 1:
+
+                    lin.add((x, y))
+                    fi[x][y] = -1
+                
+                else: 
+                    fi[x][y] = -3
+        
+        for x, y in list(lin):
+
+            if x - 1 >= 0 and fi[x-1][y] == 3:
+                lout.add((x-1, y))
+                fi[x-1][y] = 1
+            if y - 1 >= 0 and fi[x][y-1] == 3:
+                lout.add((x, y-1))
+                fi[x][y-1] = 1
+            if y + 1 < columnas and fi[x][y+1] == 3:
+                lout.add((x, y+1))
+                fi[x][y+1] = 1
+            if x + 1 < filas and fi[x+1][y] == 3:
+                lout.add((x+1, y))
+                fi[x+1][y] = 1
         
     for iteracion in range(iteraciones):
 
-        mascara_objeto = matriz_inicial < 0
-        mascara_fondo = matriz_inicial > 0
+        mascara_objeto = fi < 0
+        mascara_fondo = fi > 0
 
         theta1 = np.mean(arr_img[mascara_objeto])
         theta0 = np.mean(arr_img[mascara_fondo])
@@ -1564,27 +1574,27 @@ def aplicar_segmentacion(imagen, area, iteraciones):
         puntos_a_mover_1 = []
         for x, y in lout:
             val_pixel = arr_img[x][y]
-            fd = np.log(np.abs(theta1 - val_pixel) / np.abs(theta0 - val_pixel))
+            fd = np.log((np.abs(theta0 - val_pixel) + 1e-6) / (np.abs(theta1 - val_pixel) + 1e-6))
             if fd > 0:
                 puntos_a_mover_1.append((x, y))
         
         for x, y in puntos_a_mover_1:
             lout.remove((x, y))
             lin.add((x, y))
-            matriz_inicial[x][y] = -1
+            fi[x][y] = -1
 
-            if x - 1 >= 0 and matriz_inicial[x-1][y] == 3:
+            if x - 1 >= 0 and fi[x-1][y] == 3:
                 lout.add((x-1, y))
-                matriz_inicial[x-1][y] = 1
-            if y - 1 >= 0 and matriz_inicial[x][y-1] == 3:
+                fi[x-1][y] = 1
+            if y - 1 >= 0 and fi[x][y-1] == 3:
                 lout.add((x, y-1))
-                matriz_inicial[x][y-1] = 1
-            if y + 1 < columnas and matriz_inicial[x][y+1] == 3:
+                fi[x][y-1] = 1
+            if y + 1 < columnas and fi[x][y+1] == 3:
                 lout.add((x, y+1))
-                matriz_inicial[x][y+1] = 1
-            if x + 1 < filas and matriz_inicial[x+1][y] == 3:
+                fi[x][y+1] = 1
+            if x + 1 < filas and fi[x+1][y] == 3:
                 lout.add((x+1, y))
-                matriz_inicial[x+1][y] = 1
+                fi[x+1][y] = 1
         
         puntos_limpieza_lin = []
 
@@ -1592,87 +1602,101 @@ def aplicar_segmentacion(imagen, area, iteraciones):
 
             tiene_vecino_fondo = False
 
-            if x - 1 >= 0 and matriz_inicial[x-1][y] > 0: tiene_vecino_fondo = True
-            if y - 1 >= 0 and matriz_inicial[x][y-1] > 0: tiene_vecino_fondo = True
-            if y + 1 < columnas and matriz_inicial[x][y+1] > 0: tiene_vecino_fondo = True
-            if x + 1 < filas and matriz_inicial[x+1][y] > 0: tiene_vecino_fondo = True
+            if x - 1 >= 0 and fi[x-1][y] > 0: tiene_vecino_fondo = True
+            if y - 1 >= 0 and fi[x][y-1] > 0: tiene_vecino_fondo = True
+            if y + 1 < columnas and fi[x][y+1] > 0: tiene_vecino_fondo = True
+            if x + 1 < filas and fi[x+1][y] > 0: tiene_vecino_fondo = True
 
             if not tiene_vecino_fondo:
                 puntos_limpieza_lin.append((x, y))
 
         for x, y in puntos_limpieza_lin:
             lin.remove((x, y))
-            matriz_inicial[x][y] = -3
+            fi[x][y] = -3
 
         puntos_a_mover_2 = []
 
         for x, y in lin:
             val_pixel = arr_img[x][y]
-            fd = np.log((np.abs(theta1 - val_pixel) / (np.abs(theta0 - val_pixel))))
+            fd = np.log((np.abs(theta0 - val_pixel) + 1e-6) / (np.abs(theta1 - val_pixel) + 1e-6))            
             if fd < 0:
                 puntos_a_mover_2.append((x, y))
 
         for x, y in puntos_a_mover_2:
             lin.remove((x, y))
             lout.add((x, y))
-            matriz_inicial[x][y] = 1
+            fi[x][y] = 1
 
-            if x - 1 >= 0 and matriz_inicial[x-1][y] == -3:
+            if x - 1 >= 0 and fi[x-1][y] == -3:
                 lin.add((x-1, y))
-                matriz_inicial[x-1][y] = -1
-            if y - 1 >= 0 and matriz_inicial[x][y-1] == -3:
+                fi[x-1][y] = -1
+            if y - 1 >= 0 and fi[x][y-1] == -3:
                 lin.add((x, y-1))
-                matriz_inicial[x][y-1] = -1
-            if y + 1 < columnas and matriz_inicial[x][y+1] == -3:
+                fi[x][y-1] = -1
+            if y + 1 < columnas and fi[x][y+1] == -3:
                 lin.add((x, y+1))
-                matriz_inicial[x][y+1] = -1
-            if x + 1 < filas and matriz_inicial[x+1][y] == -3:
+                fi[x][y+1] = -1
+            if x + 1 < filas and fi[x+1][y] == -3:
                 lin.add((x+1, y))
-                matriz_inicial[x+1][y] = -1
+                fi[x+1][y] = -1
     
         puntos_limpieza_lout = []
         for x, y in lout:
             tiene_vecino_objeto = False
-            if x - 1 >= 0 and matriz_inicial[x-1][y] < 0: tiene_vecino_objeto = True
-            if y - 1 >= 0 and matriz_inicial[x][y-1] < 0: tiene_vecino_objeto = True
-            if y + 1 < columnas and matriz_inicial[x][y+1] < 0: tiene_vecino_objeto = True
-            if x + 1 < filas and matriz_inicial[x+1][y] < 0: tiene_vecino_objeto = True
+            if x - 1 >= 0 and fi[x-1][y] < 0: tiene_vecino_objeto = True
+            if y - 1 >= 0 and fi[x][y-1] < 0: tiene_vecino_objeto = True
+            if y + 1 < columnas and fi[x][y+1] < 0: tiene_vecino_objeto = True
+            if x + 1 < filas and fi[x+1][y] < 0: tiene_vecino_objeto = True
             
             if not tiene_vecino_objeto:
                 puntos_limpieza_lout.append((x, y))
                 
         for x, y in puntos_limpieza_lout:
             lout.remove((x, y))
-            matriz_inicial[x][y] = 3
-
-        # --- Condición de Parada por Estabilidad ---
-        estable = True
-        for x, y in lout:
-            val_pixel = arr_img[x, y]
-            fd = np.log((np.abs(theta1 - val_pixel)) / (np.abs(theta0 - val_pixel)))
-            if fd >= 0: estable = False; break
-        if estable:
-            for x, y in lin:
-                val_pixel = arr_img[x, y]
-                fd = np.log(np.abs(theta1 - val_pixel)) / (np.abs(theta0 - val_pixel))
-                if fd <= 0: estable = False; break
-        if estable:
-            break
+            fi[x][y] = 3
 
     salida_rgb = np.array(imagen.convert('RGB'))
     
     for x in range(filas):
         for y in range(columnas):
-            if matriz_inicial[x][y] == 1 or matriz_inicial[x][y] == -1:
-                salida_rgb[x][y] = [255, 0, 0]
+            if fi[x][y] == 1 or fi[x][y] == -1:
+                salida_rgb[x][y] = [255, 255, 0]
 
-    return Image.fromarray(salida_rgb)
-                    
-    
+    return Image.fromarray(salida_rgb), (fi, lin, lout)
 
 
+def aplicar_segmentacion_video(ruta_entrada, area, iteraciones1, iteraciones2):
 
+    imagenes_procesadas = []
+    actual = None
 
+    ruta_salida = "/home/franco/Escritorio/PROCESAMIENTO DE IMAGENES Y VISION POR COMPUTADORAS/TP0/imagenes/procesados"
+
+    extensiones = ('*.png', '*.jpg', '*.jpeg', '*.bmp')
+    imagenes = []
+
+    for ext in extensiones:
+        imagenes.extend(glob.glob(os.path.join(ruta_entrada, ext)))
+
+    imagenes.sort(key=lambda f: int(re.sub(r'\D', '', os.path.basename(f)) or 0))
+
+    for i, ruta in enumerate(imagenes):
+
+        imagen = Image.open(ruta)
+        
+        if i == 0:
+            img, actual = aplicar_segmentacion(imagen, iteraciones1, area=area, anterior=None) 
+
+        else: 
+            img, actual = aplicar_segmentacion(imagen, iteraciones2, area=None,  anterior=actual)
+
+        imagenes_procesadas.append(img)
+
+        nombre = f'frame_{i}.png'
+        ruta_final = os.path.join(ruta_salida, nombre)
+        img.save(ruta_final)
+
+    return imagenes_procesadas
 
 
 

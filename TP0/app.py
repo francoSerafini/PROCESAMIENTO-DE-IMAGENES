@@ -741,6 +741,156 @@ def ejecutar_transformada_hough():
     txt_herramientas.configure(text = f'Transformada de Hough aplicada.')
 
 
+def ejecutar_contornos_activos():
+
+    global imagen_original, imagen_modificada
+
+    if imagen_original is None:
+        messagebox.showwarning('Aviso', 'Cargue una imagen primero.')
+        return
+
+    iteraciones = simpledialog.askinteger('Iteraciones', 'Ingrese la cantidad de iteraciones:')
+    
+
+    txt_herramientas.configure(text='Modo Contornos Activos: Dibuje el rectángulo inicial.')
+    panel_original.configure(cursor='crosshair')
+
+    rect_id_local = None
+    x_ini, y_ini = 0, 0
+
+    def comenzar_dibujo(event):
+        nonlocal rect_id_local, x_ini, y_ini
+        x_ini, y_ini = event.x, event.y
+        rect_id_local = panel_original.create_rectangle(x_ini, y_ini, x_ini, y_ini, outline='red', width=2)
+
+    def arrastrar_dibujo(event):
+        nonlocal rect_id_local
+        if rect_id_local:
+            panel_original.coords(rect_id_local, x_ini, y_ini, event.x, event.y)
+
+    def finalizar_dibujo(event):
+        nonlocal rect_id_local
+        global imagen_modificada, img
+
+        if rect_id_local:
+            x_fin, y_fin = event.x, event.y
+            
+            x_izq = min(x_ini, x_fin)
+            x_der = max(x_ini, x_fin)
+            y_arr = min(y_ini, y_fin)
+            y_aba = max(y_ini, y_fin)
+            area = (x_izq, y_arr, x_der, y_aba)
+
+            panel_original.itemconfig(rect_id_local, outline='green')
+            
+
+            imagen_modificada = aplicar_segmentacion(imagen_original, area, iteraciones)[0]
+
+            img = ImageTk.PhotoImage(imagen_modificada)
+            panel_modificado.delete('all')
+            panel_modificado.create_image(0, 0, anchor='nw', image=img)
+
+            txt_herramientas.configure(text=f'Contornos Activos aplicados con {iteraciones} iteraciones.')
+            
+        panel_original.unbind('<Button-1>')
+        panel_original.unbind('<B1-Motion>')
+        panel_original.unbind('<ButtonRelease-1>')
+        panel_original.configure(cursor='arrow')
+
+    panel_original.bind('<Button-1>', comenzar_dibujo)
+    panel_original.bind('<B1-Motion>', arrastrar_dibujo)
+    panel_original.bind('<ButtonRelease-1>', finalizar_dibujo)
+
+
+
+
+def ejecutar_contornos_activos_video():
+    global imagen_original, imagen_modificada, img
+
+    ruta_entrada = filedialog.askdirectory(title="Seleccione la carpeta con los frames originales")
+    if not ruta_entrada:
+        return
+
+    extensiones = ('*.png', '*.jpg', '*.jpeg', '*.bmp')
+    archivos_imagenes = []
+    for ext in extensiones:
+        archivos_imagenes.extend(glob.glob(os.path.join(ruta_entrada, ext)))
+    
+    archivos_imagenes.sort()  
+
+    try:
+        imagen_original = Image.open(archivos_imagenes[0])
+    except Exception as e:
+        messagebox.showerror("Error", f"No se pudo abrir la primera imagen: {e}")
+        return
+
+    global img_original_tk
+    img_original_tk = ImageTk.PhotoImage(imagen_original)
+    panel_original.delete('all')
+    panel_original.create_image(0, 0, anchor='nw', image=img_original_tk)
+
+    iteraciones1 = simpledialog.askinteger('Iteraciones 1', 'Iteraciones para el primer frame (ej: 100):', initialvalue=100)
+    if iteraciones1 is None: return
+    
+    iteraciones2 = simpledialog.askinteger('Iteraciones 2', 'Iteraciones por frame subsiguiente (ej: 25):', initialvalue=25)
+    if iteraciones2 is None: return
+
+    txt_herramientas.configure(text='Modo Secuencia Video: Dibuje el rectángulo inicial en la imagen ORIGINAL.')
+    panel_original.configure(cursor='crosshair')
+
+    rect_id_local = None
+    x_ini, y_ini = 0, 0
+
+    def comenzar_dibujo(event):
+        nonlocal rect_id_local, x_ini, y_ini
+        x_ini, y_ini = event.x, event.y
+        rect_id_local = panel_original.create_rectangle(x_ini, y_ini, x_ini, y_ini, outline='red', width=2)
+
+    def arrastrar_dibujo(event):
+        nonlocal rect_id_local
+        if rect_id_local:
+            panel_original.coords(rect_id_local, x_ini, y_ini, event.x, event.y)
+
+    def finalizar_dibujo(event):
+        nonlocal rect_id_local
+        global imagen_modificada, img
+
+        if rect_id_local:
+            x_fin, y_fin = event.x, event.y
+            
+            x_izq = min(x_ini, x_fin)
+            x_der = max(x_ini, x_fin)
+            y_arr = min(y_ini, y_fin)
+            y_aba = max(y_ini, y_fin)
+            area = (x_izq, y_arr, x_der, y_aba)
+
+            panel_original.itemconfig(rect_id_local, outline='green')
+            
+            txt_herramientas.configure(text='Procesando secuencia de video completa... Por favor espere.')
+            ventana.update_idletasks()
+
+            lista_procesadas = aplicar_segmentacion_video(
+                ruta_entrada, area, iteraciones1, iteraciones2
+            )
+
+            if lista_procesadas:
+                imagen_modificada = lista_procesadas[-1]
+                img = ImageTk.PhotoImage(imagen_modificada)
+                panel_modificado.delete('all')
+                panel_modificado.create_image(0, 0, anchor='nw', image=img)
+
+                txt_herramientas.configure(text='Contornos Activos en video completados. Guardados en /imagenes/procesados.')
+                messagebox.showinfo("Éxito", "Toda la secuencia fue procesada y exportada correctamente.")
+            
+        panel_original.unbind('<Button-1>')
+        panel_original.unbind('<B1-Motion>')
+        panel_original.unbind('<ButtonRelease-1>')
+        panel_original.configure(cursor='arrow')
+
+    panel_original.bind('<Button-1>', comenzar_dibujo)
+    panel_original.bind('<B1-Motion>', arrastrar_dibujo)
+    panel_original.bind('<ButtonRelease-1>', finalizar_dibujo)
+
 
 barra_menu = tk.Menu(ventana)
 ventana.configure(menu=barra_menu)
@@ -799,7 +949,8 @@ menu_herramientas.add_separator()
 menu_herramientas.add_command(label='Aplicar detector de Canny', command=ejecutar_detector_canny)
 menu_herramientas.add_command(label='Aplicar detector de Susan', command=ejecutar_detector_susan)
 menu_herramientas.add_command(label='Aplicar transformada de Hough', command=ejecutar_transformada_hough)
-
+menu_herramientas.add_command(label='Ejecutar contornos activos', command=ejecutar_contornos_activos)
+menu_herramientas.add_command(label='Ejecutar contornos video', command=ejecutar_contornos_activos_video)
 
 
 txt_herramientas = tk.Label(ventana, text='Elige una herramienta', font=('Arial', 10))
